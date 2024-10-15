@@ -3,7 +3,7 @@ requires-python = ">=3.8"
 
 [[package]]
 name = "funsecret"
-version = "0.1.2"
+version = "1.4.1"
 source = { virtual = "." }
 dependencies = [
     { name = "sqlalchemy" },
