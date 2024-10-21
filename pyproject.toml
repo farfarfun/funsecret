@@ -1,6 +1,6 @@
 [project]
 name = "funsecret"
-version = "1.4.3"
+version = "1.4.4"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -10,5 +10,4 @@ name = "farfun"
 email = "farfarfun@qq.com"
 
 [tool.uv.workspace]
-members = ["extbuild/funsecret-snapshot"]
-
+members = [ "extbuild/funsecret-snapshot",]
