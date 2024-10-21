@@ -9,7 +9,7 @@ members = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.4"
+version = "1.4.5"
 source = { virtual = "." }
 dependencies = [
     { name = "sqlalchemy" },
@@ -20,7 +20,7 @@ requires-dist = [{ name = "sqlalchemy", specifier = ">=2.0.35" }]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.0.4"
+version = "1.4.5"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
