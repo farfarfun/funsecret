@@ -59,6 +59,7 @@ def decrypt(encrypted_text, cipher_key=None):
     try:
         return cipher.decrypt(bytes(encrypted_text, encoding="utf8")).decode()
     except Exception as e:
+        print(e)
         return encrypted_text
 
 

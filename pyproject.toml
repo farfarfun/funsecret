@@ -1,7 +1,11 @@
 [project]
 name = "funsecret"
-version = "1.4.2"
+version = "1.4.3"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [ "sqlalchemy>=2.0.35",]
+[[project.authors]]
+name = "farfun"
+email = "farfarfun@qq.com"
+
