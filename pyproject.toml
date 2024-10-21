@@ -9,3 +9,6 @@ dependencies = [ "sqlalchemy>=2.0.35",]
 name = "farfun"
 email = "farfarfun@qq.com"
 
+[tool.uv.workspace]
+members = ["extbuild/funsecret-snapshot"]
+

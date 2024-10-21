@@ -1,6 +1,12 @@
 version = 1
 requires-python = ">=3.8"
 
+[manifest]
+members = [
+    "funsecret",
+    "funsecret-snapshot",
+]
+
 [[package]]
 name = "funsecret"
 version = "1.4.3"
@@ -11,6 +17,17 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "sqlalchemy", specifier = ">=2.0.35" }]
+
+[[package]]
+name = "funsecret-snapshot"
+version = "1.0.3"
+source = { virtual = "extbuild/funsecret-snapshot" }
+dependencies = [
+    { name = "funsecret" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "funsecret", virtual = "." }]
 
 [[package]]
 name = "greenlet"
