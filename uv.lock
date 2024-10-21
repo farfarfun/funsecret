@@ -20,7 +20,7 @@ requires-dist = [{ name = "sqlalchemy", specifier = ">=2.0.35" }]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.0.3"
+version = "1.0.4"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
