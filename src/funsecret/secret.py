@@ -4,7 +4,7 @@ import os
 import pickle
 import time
 
-from fundb.sqlalchemy import Base, BaseTable, create_engine, create_engine_sqlite
+from funddb.sqlalchemy import Base, BaseTable, create_engine, create_engine_sqlite
 from sqlalchemy import BIGINT, String, UniqueConstraint, delete, select
 from sqlalchemy.orm import mapped_column
 
