@@ -1,4 +1,4 @@
-import json
+import orjson
 import logging
 import os
 import pickle
@@ -154,7 +154,7 @@ class SecretManage(BaseTable):
             with open(path, "rb") as fr:
                 all_data = pickle.load(fr)
         all_data["value"] = all_data["value"].apply(lambda x: decrypt(x, cipher_key))
-        for line in json.loads(all_data.to_json(orient="records")):
+        for line in orjson.loads(all_data.to_json(orient="records")):
             self.write(**line)
 
 
