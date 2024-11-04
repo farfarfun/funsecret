@@ -1,17 +1,17 @@
-import orjson
-import logging
 import os
 import pickle
 import time
 
+import orjson
 from funddb.sqlalchemy import Base, BaseTable, create_engine, create_engine_sqlite
+from funutil import getLogger
 from sqlalchemy import BIGINT, String, UniqueConstraint, delete, select
 from sqlalchemy.orm import mapped_column
 
 from funsecret.fernet import decrypt, encrypt
 
 local_secret_path = "~/.secret"
-logger = logging.getLogger("funsecret")
+logger = getLogger("funsecret")
 
 
 def set_secret_path(path):
