@@ -1,10 +1,10 @@
 [project]
 name = "funsecret-snapshot"
-version = "1.4.11"
+version = "1.4.12"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [ "funsecret",]
+dependencies = [ "funsecret", "funtable>=1.0.8",]
 [[project.authors]]
 name = "farfun"
 email = "farfarfun@qq.com"
