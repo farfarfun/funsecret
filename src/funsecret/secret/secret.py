@@ -41,11 +41,15 @@ class SecretManage(BaseTable):
             engine = create_engine(uri)
         else:
             secret_dir = secret_dir or local_secret_path
-            secret_dir = secret_dir.replace("~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"]))
+            secret_dir = secret_dir.replace(
+                "~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"])
+            )
             if not os.path.exists(secret_dir):
                 os.makedirs(secret_dir)
             engine = create_engine_sqlite(f"{secret_dir}/.funsecret.db")
-        super(SecretManage, self).__init__(table=SecretTable, engine=engine, *args, **kwargs)
+        super(SecretManage, self).__init__(
+            table=SecretTable, engine=engine, *args, **kwargs
+        )
 
     def encrypt(self, text):
         """
@@ -63,7 +67,18 @@ class SecretManage(BaseTable):
         """
         return decrypt(encrypted_text, self.cipher_key)
 
-    def read(self, cate1, cate2, cate3="", cate4="", cate5="", value=None, save=True, secret=False, expire_time=None):
+    def read(
+        self,
+        cate1,
+        cate2,
+        cate3="",
+        cate4="",
+        cate5="",
+        value=None,
+        save=True,
+        secret=False,
+        expire_time=None,
+    ):
         """
         按照分类读取保存的key，如果为空或者已过期，则返回None
         :param cate1: cate1
@@ -80,7 +95,16 @@ class SecretManage(BaseTable):
         if expire_time is not None and expire_time < 1000000000:
             expire_time += int(time.time())
         if save:
-            self.write(value, cate1, cate2, cate3, cate4, cate5, secret=secret, expire_time=expire_time)
+            self.write(
+                value,
+                cate1,
+                cate2,
+                cate3,
+                cate4,
+                cate5,
+                secret=secret,
+                expire_time=expire_time,
+            )
         if value is not None:
             return value
 
@@ -98,12 +122,26 @@ class SecretManage(BaseTable):
             value, expire_time = data[0]
             if secret:
                 value = self.decrypt(value)
-            if expire_time is None or expire_time == "None" or int(time.time()) < expire_time:
+            if (
+                expire_time is None
+                or expire_time == "None"
+                or int(time.time()) < expire_time
+            ):
                 return value
 
         return None
 
-    def write(self, value, cate1, cate2="", cate3="", cate4="", cate5="", secret=False, expire_time=99999999):
+    def write(
+        self,
+        value,
+        cate1,
+        cate2="",
+        cate3="",
+        cate4="",
+        cate5="",
+        secret=False,
+        expire_time=99999999,
+    ):
         """
         对数据进行保存
         :param value: 保存的数据
@@ -139,13 +177,17 @@ class SecretManage(BaseTable):
         res = []
         all_data = self.select_all()
         if cipher_key is not None:
-            all_data["value"] = all_data["value"].apply(lambda x: encrypt(x, cipher_key))
+            all_data["value"] = all_data["value"].apply(
+                lambda x: encrypt(x, cipher_key)
+            )
         with open(path, "wb") as fw:
             pickle.dump(all_data, fw)
 
         return res
 
-    def load_secret_str(self, all_data=None, path="~/.secret/secret_str", cipher_key=None):
+    def load_secret_str(
+        self, all_data=None, path="~/.secret/secret_str", cipher_key=None
+    ):
         path = path.replace("~", os.environ["HOME"])
         if all_data is None:
             if not os.path.exists(path):
@@ -158,7 +200,17 @@ class SecretManage(BaseTable):
             self.write(**line)
 
 
-def read_secret(cate1, cate2, cate3="", cate4="", cate5="", value=None, save=True, secret=False, expire_time=9999999):
+def read_secret(
+    cate1,
+    cate2,
+    cate3="",
+    cate4="",
+    cate5="",
+    value=None,
+    save=True,
+    secret=False,
+    expire_time=9999999,
+):
     manage = SecretManage()
     value = manage.read(
         cate1=cate1,
@@ -176,7 +228,16 @@ def read_secret(cate1, cate2, cate3="", cate4="", cate5="", value=None, save=Tru
     return value
 
 
-def write_secret(value, cate1, cate2="", cate3="", cate4="", cate5="", secret=False, expire_time=9999999):
+def write_secret(
+    value,
+    cate1,
+    cate2="",
+    cate3="",
+    cate4="",
+    cate5="",
+    secret=False,
+    expire_time=9999999,
+):
     manage = SecretManage()
     manage.write(
         value=value,
