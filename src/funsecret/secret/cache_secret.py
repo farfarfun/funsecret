@@ -126,13 +126,16 @@ class CacheSecretManage:
         :param expire_time:过期时间，默认不过期
         """
         if value is None:
-            logger.error(f"value cannot be None")
+            logger.error("value cannot be None")
             return
         cache_key = self._get_key(
             cate1=cate1, cate2=cate2, cate3=cate3, cate4=cate4, cate5=cate5
         )
         cache_value = self.encrypt(value) if secret else value
         self.cache.set(cache_key, cache_value, expire=expire_time)
+
+
+manage = CacheSecretManage()
 
 
 def read_cache_secret(
@@ -146,7 +149,6 @@ def read_cache_secret(
     secret=True,
     expire_time=None,
 ):
-    manage = CacheSecretManage()
     value = manage.read(
         cate1=cate1,
         cate2=cate2,
@@ -171,7 +173,6 @@ def write_cache_secret(
     secret=True,
     expire_time=None,
 ):
-    manage = CacheSecretManage()
     manage.write(
         value=value,
         cate1=cate1,
@@ -185,12 +186,10 @@ def write_cache_secret(
 
 
 def load_os_environ():
-    manage = CacheSecretManage()
     for k, v in os.environ.items():
         manage.read(cate1="os", cate2="environ", cate3=k, value=v)
 
 
 def save_os_environ():
-    manage = CacheSecretManage()
     for k, v in os.environ.items():
         manage.read(cate1="os", cate2="environ", cate3=k, value=v)
