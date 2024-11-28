@@ -95,7 +95,7 @@ class CacheSecretManage:
         cate3="",
         cate4="",
         cate5="",
-        secret=False,
+        secret=True,
         expire_time=99999999,
     ):
         """
@@ -132,7 +132,7 @@ def read_cache_secret(
     cate5="",
     value=None,
     save=True,
-    secret=False,
+    secret=True,
     expire_time=9999999,
 ):
     manage = CacheSecretManage()
@@ -161,7 +161,7 @@ def write_cache_secret(
     cate3="",
     cate4="",
     cate5="",
-    secret=False,
+    secret=True,
     expire_time=9999999,
 ):
     manage = CacheSecretManage()
