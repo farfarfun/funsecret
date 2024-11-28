@@ -3,8 +3,9 @@ import os
 import time
 
 from diskcache import Cache
-from funsecret.fernet import decrypt, encrypt
 from funutil import getLogger
+
+from funsecret.fernet import decrypt, encrypt
 
 logger = getLogger("funsecret")
 
@@ -15,7 +16,6 @@ class CacheSecretManage:
             secret_dir = os.environ.get("FUN_CACHE_SECRET_PATH")
         if secret_dir is None:
             secret_dir = f'{os.environ.get("FUN_CACHE_SECRET_HOME") or os.environ["HOME"]}/.secret_cache'
-        print(secret_dir)
         self.cache = Cache(secret_dir=secret_dir)
         self.cipher_key = (
             cipher_key or base64.urlsafe_b64encode(secret_dir.encode("utf-8")).decode()
