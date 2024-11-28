@@ -200,6 +200,9 @@ class SecretManage(BaseTable):
             self.write(**line)
 
 
+manage = SecretManage()
+
+
 def read_secret(
     cate1,
     cate2,
@@ -211,7 +214,6 @@ def read_secret(
     secret=False,
     expire_time=9999999,
 ):
-    manage = SecretManage()
     value = manage.read(
         cate1=cate1,
         cate2=cate2,
@@ -238,7 +240,6 @@ def write_secret(
     secret=False,
     expire_time=9999999,
 ):
-    manage = SecretManage()
     manage.write(
         value=value,
         cate1=cate1,
@@ -260,12 +261,10 @@ def load_secret_str(secret_str=None, path="~/.secret/secret_str"):
 
 
 def load_os_environ():
-    manage = SecretManage()
     for k, v in os.environ.items():
         manage.read(cate1="os", cate2="environ", cate3=k, value=v)
 
 
 def save_os_environ():
-    manage = SecretManage()
     for k, v in os.environ.items():
         manage.read(cate1="os", cate2="environ", cate3=k, value=v)
