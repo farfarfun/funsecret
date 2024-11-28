@@ -15,9 +15,13 @@ from .secret import (
     read_secret,
     save_secret_str,
     write_secret,
+    read_cache_secret,
+    write_cache_secret,
+    CacheSecretManage,
 )
 
 __all__ = [
+    "read_cache_secret",
     "decrypt",
     "encrypt",
     "generate_key",
@@ -32,4 +36,6 @@ __all__ = [
     "write_secret",
     "load_os_environ",
     "save_secret_str",
+    "write_cache_secret",
+    "CacheSecretManage",
 ]

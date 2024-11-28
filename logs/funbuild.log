@@ -1,0 +1,3 @@
+2024-11-28 14:19:20.672 |INFO    | funbuild.core.core : core:  77 | funbuild | - funsecret build
+2024-11-28 14:19:20.673 |INFO    | funbuild.core.core : core:  65 | funbuild | - funsecret pull
+2024-11-28 14:19:33.453 |INFO    | funbuild.core.core : core:  69 | funbuild | - funsecret push
