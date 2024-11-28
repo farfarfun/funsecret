@@ -1,3 +1,4 @@
+from .cache_secret import CacheSecretManage, read_cache_secret, write_cache_secret
 from .secret import (
     SecretManage,
     SecretTable,
@@ -7,7 +8,6 @@ from .secret import (
     save_secret_str,
     write_secret,
 )
-from .cache import read_cache_secret, write_cache_secret, CacheSecretManage
 
 __all__ = [
     "SecretManage",
