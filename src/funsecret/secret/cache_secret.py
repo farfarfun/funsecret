@@ -1,6 +1,7 @@
 import base64
 import os
 import time
+from urllib.parse import quote_plus
 
 from diskcache import Cache
 from funutil import getLogger
@@ -17,8 +18,12 @@ class CacheSecretManage:
         if secret_dir is None:
             secret_dir = f'{os.environ.get("FUN_CACHE_SECRET_HOME") or os.environ["HOME"]}/.secret_cache'
         self.cache = Cache(secret_dir=secret_dir)
+
         self.cipher_key = (
-            cipher_key or base64.urlsafe_b64encode(secret_dir.encode("utf-8")).decode()
+            cipher_key
+            or base64.urlsafe_b64encode(
+                quote_plus(secret_dir)[:32].encode("utf-8")
+            ).decode()
         )
 
     def encrypt(self, text):
