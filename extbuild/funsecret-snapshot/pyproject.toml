@@ -1,13 +1,16 @@
 [project]
 name = "funsecret-snapshot"
-version = "1.4.29"
-description = "Add your description here"
+version = "1.4.30"
+description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [ "funsecret", "funtable>=1.0.8",]
 [[project.authors]]
-name = "farfun"
+name = "niuliangtao"
 email = "farfarfun@qq.com"
+
+[tool.setuptools]
+license-files = []
 
 [tool.uv.sources.funsecret]
 workspace = true

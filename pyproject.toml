@@ -1,13 +1,16 @@
 [project]
 name = "funsecret"
-version = "1.4.29"
-description = "Add your description here"
+version = "1.4.30"
+description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3", "funddb>=1.2.10", "funutil>=1.0.15", "orjson>=3.10.10", "sqlalchemy>=2.0.35",]
 [[project.authors]]
-name = "farfun"
+name = "niuliangtao"
 email = "farfarfun@qq.com"
+
+[tool.setuptools]
+license-files = []
 
 [tool.uv.workspace]
 members = [ "extbuild/funsecret-snapshot",]
