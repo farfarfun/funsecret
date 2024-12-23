@@ -199,7 +199,7 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.30"
+version = "1.4.31"
 source = { virtual = "." }
 dependencies = [
     { name = "cryptography" },
@@ -222,7 +222,7 @@ requires-dist = [
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.30"
+version = "1.4.31"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
@@ -571,7 +571,7 @@ name = "tqdm"
 version = "4.67.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e8/4f/0153c21dc5779a49a0598c445b1978126b1344bab9ee71e53e44877e14e0/tqdm-4.67.0.tar.gz", hash = "sha256:fe5a6f95e6fe0b9755e9469b77b9c3cf850048224ecaa8293d7d2d31f97d869a", size = 169739 }
 wheels = [

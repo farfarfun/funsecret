@@ -1,71 +1,201 @@
+import base64
 import os
-import pickle
 import time
+from typing import List
+from urllib.parse import quote_plus
 
-import orjson
-from funddb.sqlalchemy import Base, BaseTable, create_engine, create_engine_sqlite
-from funutil import getLogger
-from sqlalchemy import BIGINT, String, UniqueConstraint, delete, select
-from sqlalchemy.orm import mapped_column
-
+import pandas as pd
+from flask_session import Session
 from funsecret.fernet import decrypt, encrypt
+from funutil import getLogger
+from funutil.cache import cache
+from sqlalchemy import (
+    BIGINT,
+    String,
+    UniqueConstraint,
+    delete,
+    select,
+    update,
+    create_engine as create_engine2,
+)
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
-local_secret_path = "~/.secret"
 logger = getLogger("funsecret")
 
 
-def set_secret_path(path):
-    global local_secret_path
-    local_secret_path = path
+class Base(DeclarativeBase):
+    pass
+
+
+@cache
+def create_engine(uri, *args, **kwargs):
+    return create_engine2(uri)
+
+
+def get_secret_url(secret_url=None):
+    if secret_url is not None:
+        return secret_url
+    return os.environ.get("FUN_SECRET_URL")
+
+
+def get_secret_path(secret_dir):
+    secret_dir = secret_dir or "~/.secret"
+    secret_dir = secret_dir.replace(
+        "~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"])
+    )
+    if not os.path.exists(secret_dir):
+        os.makedirs(secret_dir)
+    return secret_dir
 
 
 class SecretTable(Base):
-    __tablename__ = "secret_manage"
-    __table_args__ = (UniqueConstraint("cate1", "cate2", "cate3", "cate4", "cate5"),)
+    __tablename__ = "secret_table"
+    __table_args__ = (UniqueConstraint("key"),)
 
-    cate1 = mapped_column(String(100), comment="一级分类", default="", primary_key=True)
-    cate2 = mapped_column(String(100), comment="二级分类", default="", primary_key=True)
-    cate3 = mapped_column(String(100), comment="三级分类", default="", primary_key=True)
-    cate4 = mapped_column(String(100), comment="四级分类", default="", primary_key=True)
-    cate5 = mapped_column(String(100), comment="五级分类", default="", primary_key=True)
-    value = mapped_column(String(100), comment="值", default="")
+    key = mapped_column(String(200), comment="key", default="", primary_key=True)
+    value = mapped_column(String(500), comment="value", default="")
 
     expire_time = mapped_column(BIGINT, comment="过期时间", default=9999999999)
 
-
-class SecretManage(BaseTable):
-    def __init__(self, secret_dir=None, url=None, cipher_key=None, *args, **kwargs):
-        self.cipher_key = cipher_key
-        if url is not None:
-            uri = url
-            engine = create_engine(uri)
-        else:
-            secret_dir = secret_dir or local_secret_path
-            secret_dir = secret_dir.replace(
-                "~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"])
-            )
-            if not os.path.exists(secret_dir):
-                os.makedirs(secret_dir)
-            engine = create_engine_sqlite(f"{secret_dir}/.funsecret.db")
-        super(SecretManage, self).__init__(
-            table=SecretTable, engine=engine, *args, **kwargs
+    @cache
+    def exists(self, session: Session):
+        return (
+            session.execute(
+                select(SecretTable).where(SecretTable.key == self.key)
+            ).first()
+            is not None
         )
 
-    def encrypt(self, text):
+    def to_dict(self):
+        return {
+            "key": self.key,
+            "value": self.value,
+            "expire_time": self.expire_time,
+        }
+
+    def upsert(self, session: Session, update_data=False):
+        if not self.exists(session):
+            session.execute(insert(SecretTable).values(**self.to_dict()))
+        elif update_data:
+            session.execute(
+                update(SecretTable)
+                .where(SecretTable.key == self.key)
+                .values(**self.to_dict())
+            )
+
+
+class SecretManage:
+    def __init__(
+        self,
+        secret_dir: str = None,
+        url: str = None,
+        cipher_key: str = None,
+        *args,
+        **kwargs,
+    ):
+        secret_dir = get_secret_path(secret_dir)
+        secret_url = get_secret_url(secret_dir)
+
+        if secret_url is not None:
+            self.engine = create_engine(url)
+        else:
+            self.engine = create_engine(f"sqlite:///{secret_dir}/.funsecret.db")
+
+        if cipher_key:
+            self.cipher_key = cipher_key
+        else:
+            self.cipher_key = base64.urlsafe_b64encode(
+                quote_plus(secret_dir * 2)[:32].encode("utf-8")
+            ).decode()
+
+        Base.metadata.create_all(self.engine)
+
+    @staticmethod
+    def convert_key(
+        cate1: str, cate2: str, cate3: str = None, cate4: str = None, cate5: str = None
+    ) -> str:
+        return f"{cate1}-{cate2}-{cate3}-{cate4}-{cate5}"
+
+    def encrypt(self, text: str, secret: bool = True) -> str:
         """
         加密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
         :param text: 需要加密的文本
+        :param secret:是否加密
         :return: 加密后的文本
         """
-        return encrypt(text, self.cipher_key)
+        if secret and self.cipher_key:
+            return encrypt(text, self.cipher_key)
+        return text
 
-    def decrypt(self, encrypted_text):
+    def decrypt(self, encrypted_text: str, secret: bool = True) -> str:
         """
         解密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
         :param encrypted_text: 需要解密的文本
+        :param secret:是否加密
         :return:解密后的文本
         """
-        return decrypt(encrypted_text, self.cipher_key)
+        if secret and self.cipher_key:
+            return decrypt(encrypted_text, self.cipher_key)
+        return encrypted_text
+
+    def select_all(self):
+        with self.engine.begin() as conn:
+            return pd.read_sql_table(SecretTable.__tablename__, conn)
+
+    def scalars(self) -> List[SecretTable]:
+        with Session(self.engine) as session:
+            return [data for data in session.execute(select(SecretTable)).scalars()]
+
+    def read_key(
+        self,
+        key,
+        value=None,
+        save=True,
+        secret=False,
+        expire_time=None,
+        *args,
+        **kwargs,
+    ) -> str:
+        if expire_time is not None and expire_time < 1000000000:
+            expire_time += int(time.time())
+        if save:
+            self.write_key(key=key, value=value, secret=secret, expire_time=expire_time)
+        if value is not None:
+            return value
+
+        with Session(self.engine) as session:
+            session.execute(
+                delete(SecretTable).where(SecretTable.expire_time < time.time())
+            )
+            session.commit()
+
+            sql = select(SecretTable).where(SecretTable.key == self.encrypt(key))
+            datas = session.execute(sql).scalar()
+            if datas is not None:
+                value, expire_time = datas.value, datas.expire_time
+                value = self.decrypt(value, secret=secret)
+                if (
+                    expire_time is None
+                    or expire_time == "None"
+                    or int(time.time()) < expire_time
+                ):
+                    return value
+        return None
+
+    def write_key(self, key, value, secret=False, expire_time=None, *args, **kwargs):
+        if value is None:
+            return
+        expire_time = expire_time or 999999999
+        if expire_time is not None and expire_time < 1000000000:
+            expire_time += int(time.time())
+
+        with Session(self.engine) as session:
+            SecretTable(
+                key=self.encrypt(key, secret=secret),
+                value=self.encrypt(value, secret=secret),
+                expire_time=expire_time,
+            ).upsert(session)
 
     def read(
         self,
@@ -78,7 +208,9 @@ class SecretManage(BaseTable):
         save=True,
         secret=False,
         expire_time=None,
-    ):
+        *args,
+        **kwargs,
+    ) -> str:
         """
         按照分类读取保存的key，如果为空或者已过期，则返回None
         :param cate1: cate1
@@ -92,44 +224,16 @@ class SecretManage(BaseTable):
         :param expire_time: 过期时间，unix时间戳，如果小于10000000的话，会当做保存数据的持续时间，加上当前的Unix时间戳作为过期时间
         :return: 保存的数据
         """
-        if expire_time is not None and expire_time < 1000000000:
-            expire_time += int(time.time())
-        if save:
-            self.write(
-                value,
-                cate1,
-                cate2,
-                cate3,
-                cate4,
-                cate5,
-                secret=secret,
-                expire_time=expire_time,
-            )
-        if value is not None:
-            return value
-
-        self.execute(delete(SecretTable).where(SecretTable.expire_time < time.time()))
-
-        sql = select(SecretTable.value, SecretTable.expire_time).where(
-            SecretTable.cate1 == cate1,
-            SecretTable.cate2 == cate2,
-            SecretTable.cate3 == cate3,
-            SecretTable.cate4 == cate4,
-            SecretTable.cate5 == cate5,
+        key = self.convert_key(cate1, cate2, cate3, cate4, cate5)
+        return self.read_key(
+            key,
+            value=value,
+            save=save,
+            secret=secret,
+            expire_time=expire_time,
+            *args,
+            **kwargs,
         )
-        data = [line for line in self.execute(sql)]
-        if len(data) > 0:
-            value, expire_time = data[0]
-            if secret:
-                value = self.decrypt(value)
-            if (
-                expire_time is None
-                or expire_time == "None"
-                or int(time.time()) < expire_time
-            ):
-                return value
-
-        return None
 
     def write(
         self,
@@ -140,7 +244,9 @@ class SecretManage(BaseTable):
         cate4="",
         cate5="",
         secret=False,
-        expire_time=99999999,
+        expire_time=None,
+        *args,
+        **kwargs,
     ):
         """
         对数据进行保存
@@ -153,118 +259,68 @@ class SecretManage(BaseTable):
         :param secret: 是否需要加密
         :param expire_time:过期时间，默认不过期
         """
-        if value is None:
-            return
-        if expire_time is not None and expire_time < 1000000000:
-            expire_time += int(time.time())
-        if secret:
-            value = self.encrypt(value)
-
-        properties = {
-            "cate1": cate1,
-            "cate2": cate2,
-            "cate3": cate3,
-            "cate4": cate4,
-            "cate5": cate5,
-            "value": value,
-            "expire_time": expire_time,
-        }
-
-        self.upsert(values=properties)
-
-    def save_secret_str(self, path="~/.secret/secret_str", cipher_key=None):
-        path = path.replace("~", os.environ["HOME"])
-        res = []
-        all_data = self.select_all()
-        if cipher_key is not None:
-            all_data["value"] = all_data["value"].apply(
-                lambda x: encrypt(x, cipher_key)
-            )
-        with open(path, "wb") as fw:
-            pickle.dump(all_data, fw)
-
-        return res
-
-    def load_secret_str(
-        self, all_data=None, path="~/.secret/secret_str", cipher_key=None
-    ):
-        path = path.replace("~", os.environ["HOME"])
-        if all_data is None:
-            if not os.path.exists(path):
-                print(f"{path} is not exists.")
-                return
-            with open(path, "rb") as fr:
-                all_data = pickle.load(fr)
-        all_data["value"] = all_data["value"].apply(lambda x: decrypt(x, cipher_key))
-        for line in orjson.loads(all_data.to_json(orient="records")):
-            self.write(**line)
+        key = self.convert_key(cate1, cate2, cate3, cate4, cate5)
+        self.write_key(
+            key=key,
+            value=value,
+            secret=secret,
+            expire_time=expire_time,
+            *args,
+            **kwargs,
+        )
 
 
-manage = SecretManage()
+@cache
+def cache_manage():
+    return SecretManage()
 
 
 def read_secret(
-    cate1,
-    cate2,
-    cate3="",
-    cate4="",
-    cate5="",
-    value=None,
-    save=True,
-    secret=False,
-    expire_time=9999999,
-):
-    value = manage.read(
+    cate1, cate2, cate3="", cate4="", cate5="", value=None, *args, **kwargs
+) -> str:
+    value = cache_manage().read(
         cate1=cate1,
         cate2=cate2,
         cate3=cate3,
         cate4=cate4,
         cate5=cate5,
         value=value,
-        save=save,
-        secret=secret,
-        expire_time=expire_time,
+        *args,
+        **kwargs,
     )
     if value is None:
         logger.debug(f"not found value from {cate1}/{cate2}/{cate3}/{cate4}/{cate5}")
     return value
 
 
-def write_secret(
-    value,
-    cate1,
-    cate2="",
-    cate3="",
-    cate4="",
-    cate5="",
-    secret=False,
-    expire_time=9999999,
-):
-    manage.write(
+def write_secret(value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **kwargs):
+    cache_manage().write(
         value=value,
         cate1=cate1,
         cate2=cate2,
         cate3=cate3,
         cate4=cate4,
         cate5=cate5,
-        secret=secret,
-        expire_time=expire_time,
+        *args,
+        **kwargs,
     )
 
 
-def save_secret_str(path="~/.secret/secret_str"):
-    return SecretManage().save_secret_str(path)
+def _syc_secret_db(manage1, manage2):
+    with Session(manage2.engine) as session:
+        for entity in manage1.scalars():
+            entity.key = manage2.encrypt(manage1.decrypt(entity.key))
+            entity.value = manage2.encrypt(manage1.decrypt(entity.value))
+            entity.upsert(session)
 
 
-def load_secret_str(secret_str=None, path="~/.secret/secret_str"):
-    SecretManage().load_secret_str(secret_str, path)
+def load_secret_db(url=None, cipher_key=None):
+    manage1 = SecretManage(url=url, cipher_key=cipher_key)
+    manage2 = cache_manage()
+    _syc_secret_db(manage1, manage2)
 
 
-def load_os_environ():
-    for k, v in os.environ.items():
-        manage.read(cate1="os", cate2="environ", cate3=k, value=v)
-
-
-def save_os_environ():
-    for k, v in os.environ.items():
-        manage.read(cate1="os", cate2="environ", cate3=k, value=v)
+def save_secret_db(url=None, cipher_key=None):
+    manage1 = SecretManage(url=url, cipher_key=cipher_key)
+    manage2 = cache_manage()
+    _syc_secret_db(manage2, manage1)
