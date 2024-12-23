@@ -6,7 +6,6 @@ from typing import List
 from urllib.parse import quote_plus
 
 import pandas as pd
-from flask_session import Session
 from funsecret.fernet import decrypt, encrypt
 from funutil import getLogger
 from funutil.cache import cache
