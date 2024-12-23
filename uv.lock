@@ -186,7 +186,7 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.36"
+version = "1.4.37"
 source = { virtual = "." }
 dependencies = [
     { name = "cryptography" },
@@ -194,6 +194,7 @@ dependencies = [
     { name = "funutil" },
     { name = "orjson" },
     { name = "sqlalchemy" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -203,11 +204,12 @@ requires-dist = [
     { name = "funutil", specifier = ">=1.0.15" },
     { name = "orjson", specifier = ">=3.10.10" },
     { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "tqdm", specifier = ">=4.67.0" },
 ]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.36"
+version = "1.4.37"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },

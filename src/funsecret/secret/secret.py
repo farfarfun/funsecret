@@ -1,6 +1,5 @@
 import base64
 import os
-import sys
 import time
 from typing import List
 from urllib.parse import quote_plus
@@ -21,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
+from tqdm import tqdm
 
 logger = getLogger("funsecret")
 
@@ -289,10 +289,17 @@ def write_secret(value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **
 
 def _syc_secret_db(manage1, manage2):
     with Session(manage2.engine) as session:
-        for entity in manage1.scalars():
-            entity.key = manage2.encrypt(manage1.decrypt(entity.key))
-            entity.value = manage2.encrypt(manage1.decrypt(entity.value))
-            entity.upsert(session)
+        pbar = tqdm(manage1.scalars())
+        success = 0
+        for entity in pbar:
+            try:
+                entity.key = manage2.encrypt(manage1.decrypt(entity.key))
+                entity.value = manage2.encrypt(manage1.decrypt(entity.value))
+                entity.upsert(session)
+                success += 1
+                pbar.set_description(f"success: {success}")
+            except Exception as e:
+                logger.error(e)
 
 
 def load_secret_db(url=None, cipher_key=None):
