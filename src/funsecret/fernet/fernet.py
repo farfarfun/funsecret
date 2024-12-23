@@ -17,7 +17,10 @@ def encrypt(text, cipher_key=None):
     if cipher_key is None or text is None:
         return text
     cipher = Fernet(bytes(cipher_key, encoding="utf8"))
-    return cipher.encrypt(text.encode()).decode()
+    # return cipher.encrypt(text.encode()).decode()
+    return cipher._encrypt_from_parts(
+        text.encode(), 1024, "123456789abcdefg".encode("utf-8")
+    ).decode()
 
 
 def file_encrypt(src_path, dst_path=None, cipher_key=None):
