@@ -23,18 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
-logger = getLogger("funsecret", level="DEBUG")
-
-logger.configure(
-    handlers=[
-        {
-            "sink": sys.stderr,
-            "format": "{time:YYYY-MM-DD HH:mm:ss.SSS} |<lvl>{level:8}</>| {name} : {module}:{line:4} | <cyan>{extra[module_name]}</> | - <lvl>{message}</>",
-            "colorize": True,
-            "level": "DEBUG",
-        },
-    ]
-)
+logger = getLogger("funsecret")
 
 
 class Base(DeclarativeBase):
