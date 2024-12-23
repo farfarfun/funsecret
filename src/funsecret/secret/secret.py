@@ -109,7 +109,6 @@ class SecretManage:
         secret_url = get_secret_url(url)
 
         if secret_url is not None:
-            print(secret_url)
             self.engine = create_engine(secret_url)
         else:
             self.engine = create_engine(f"sqlite:///{secret_dir}/.funsecret.db")
