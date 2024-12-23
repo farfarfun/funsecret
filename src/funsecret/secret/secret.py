@@ -1,5 +1,6 @@
 import base64
 import os
+import sys
 import time
 from typing import List
 from urllib.parse import quote_plus
@@ -17,11 +18,23 @@ from sqlalchemy import (
     select,
     update,
     create_engine as create_engine2,
+    Engine,
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
-logger = getLogger("funsecret")
+logger = getLogger("funsecret", level="DEBUG")
+
+logger.configure(
+    handlers=[
+        {
+            "sink": sys.stderr,
+            "format": "{time:YYYY-MM-DD HH:mm:ss.SSS} |<lvl>{level:8}</>| {name} : {module}:{line:4} | <cyan>{extra[module_name]}</> | - <lvl>{message}</>",
+            "colorize": True,
+            "level": "DEBUG",
+        },
+    ]
+)
 
 
 class Base(DeclarativeBase):
@@ -68,13 +81,10 @@ class SecretTable(Base):
         )
 
     def to_dict(self):
-        return {
-            "key": self.key,
-            "value": self.value,
-            "expire_time": self.expire_time,
-        }
+        return {"key": self.key, "value": self.value, "expire_time": self.expire_time}
 
-    def upsert(self, session: Session, update_data=False):
+    def upsert(self, session: Session, update_data=True):
+        logger.debug(f"upsert:{self.to_dict()}")
         if not self.exists(session):
             session.execute(insert(SecretTable).values(**self.to_dict()))
         elif update_data:
@@ -83,6 +93,19 @@ class SecretTable(Base):
                 .where(SecretTable.key == self.key)
                 .values(**self.to_dict())
             )
+        session.commit()
+
+    @staticmethod
+    def select_all(engine):
+        with engine.begin() as conn:
+            return pd.read_sql_table(SecretTable.__tablename__, conn)
+
+    @staticmethod
+    def delete_all(engine: Engine):
+        logger.warning(f"delete_all:{SecretTable.__tablename__}")
+        with Session(engine) as session:
+            session.execute(delete(SecretTable))
+            session.commit()
 
 
 class SecretManage:
@@ -95,10 +118,11 @@ class SecretManage:
         **kwargs,
     ):
         secret_dir = get_secret_path(secret_dir)
-        secret_url = get_secret_url(secret_dir)
+        secret_url = get_secret_url(url)
 
         if secret_url is not None:
-            self.engine = create_engine(url)
+            print(secret_url)
+            self.engine = create_engine(secret_url)
         else:
             self.engine = create_engine(f"sqlite:///{secret_dir}/.funsecret.db")
 
@@ -108,7 +132,7 @@ class SecretManage:
             self.cipher_key = base64.urlsafe_b64encode(
                 quote_plus(secret_dir * 2)[:32].encode("utf-8")
             ).decode()
-
+        logger.debug(f"cipher_key: {self.cipher_key}")
         Base.metadata.create_all(self.engine)
 
     @staticmethod
@@ -139,24 +163,22 @@ class SecretManage:
             return decrypt(encrypted_text, self.cipher_key)
         return encrypted_text
 
-    def select_all(self):
-        with self.engine.begin() as conn:
-            return pd.read_sql_table(SecretTable.__tablename__, conn)
-
     def scalars(self) -> List[SecretTable]:
         with Session(self.engine) as session:
             return [data for data in session.execute(select(SecretTable)).scalars()]
 
     def read_key(
-        self,
-        key,
-        value=None,
-        save=True,
-        secret=False,
-        expire_time=None,
-        *args,
-        **kwargs,
+        self, key, value=None, save=True, secret=True, expire_time=None, *args, **kwargs
     ) -> str:
+        """
+        按照分类读取保存的key，如果为空或者已过期，则返回None
+        :param key: cate1
+        :param value: 保存的数据
+        :param save: 是否需要保存，保存的话，会覆盖当前保存的数据
+        :param secret: 是否需要加密，如果加密的话，构造类的时候，cipher_key不能为空，这是加密解密的秘钥
+        :param expire_time: 过期时间，unix时间戳，如果小于10000000的话，会当做保存数据的持续时间，加上当前的Unix时间戳作为过期时间
+        :return: 保存的数据
+        """
         if expire_time is not None and expire_time < 1000000000:
             expire_time += int(time.time())
         if save:
@@ -183,7 +205,14 @@ class SecretManage:
                     return value
         return None
 
-    def write_key(self, key, value, secret=False, expire_time=None, *args, **kwargs):
+    def write_key(self, key, value, secret=True, expire_time=None, *args, **kwargs):
+        """
+        对数据进行保存
+        :param value: 保存的数据
+        :param key:key
+        :param secret: 是否需要加密
+        :param expire_time:过期时间，默认不过期
+        """
         if value is None:
             return
         expire_time = expire_time or 999999999
@@ -198,18 +227,7 @@ class SecretManage:
             ).upsert(session)
 
     def read(
-        self,
-        cate1,
-        cate2,
-        cate3="",
-        cate4="",
-        cate5="",
-        value=None,
-        save=True,
-        secret=False,
-        expire_time=None,
-        *args,
-        **kwargs,
+        self, cate1, cate2, cate3="", cate4="", cate5="", value=None, *args, **kwargs
     ) -> str:
         """
         按照分类读取保存的key，如果为空或者已过期，则返回None
@@ -219,34 +237,14 @@ class SecretManage:
         :param cate4: cate4
         :param cate5: cate5
         :param value: 保存的数据
-        :param save: 是否需要保存，保存的话，会覆盖当前保存的数据
-        :param secret: 是否需要加密，如果加密的话，构造类的时候，cipher_key不能为空，这是加密解密的秘钥
-        :param expire_time: 过期时间，unix时间戳，如果小于10000000的话，会当做保存数据的持续时间，加上当前的Unix时间戳作为过期时间
+
         :return: 保存的数据
         """
         key = self.convert_key(cate1, cate2, cate3, cate4, cate5)
-        return self.read_key(
-            key,
-            value=value,
-            save=save,
-            secret=secret,
-            expire_time=expire_time,
-            *args,
-            **kwargs,
-        )
+        return self.read_key(key, value=value, *args, **kwargs)
 
     def write(
-        self,
-        value,
-        cate1,
-        cate2="",
-        cate3="",
-        cate4="",
-        cate5="",
-        secret=False,
-        expire_time=None,
-        *args,
-        **kwargs,
+        self, value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **kwargs
     ):
         """
         对数据进行保存
@@ -256,15 +254,10 @@ class SecretManage:
         :param cate3:cate3
         :param cate4:cate4
         :param cate5:cate5
-        :param secret: 是否需要加密
-        :param expire_time:过期时间，默认不过期
         """
-        key = self.convert_key(cate1, cate2, cate3, cate4, cate5)
         self.write_key(
-            key=key,
+            key=self.convert_key(cate1, cate2, cate3, cate4, cate5),
             value=value,
-            secret=secret,
-            expire_time=expire_time,
             *args,
             **kwargs,
         )
