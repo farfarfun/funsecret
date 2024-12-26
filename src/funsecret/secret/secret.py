@@ -4,27 +4,27 @@ import time
 from typing import List
 from urllib.parse import quote_plus
 
-from funutil import getLogger
-from sqlalchemy import String, select, update
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
-
 import pandas as pd
-from funsecret.fernet import decrypt, encrypt
+from funutil import getLogger
 from funutil.cache import cache
 from sqlalchemy import (
     BIGINT,
+    Engine,
     String,
     UniqueConstraint,
     delete,
     select,
     update,
+)
+from sqlalchemy import (
     create_engine as create_engine2,
-    Engine,
 )
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from tqdm import tqdm
+
+from funsecret.fernet import decrypt, encrypt
+from datetime import datetime
 
 logger = getLogger("funsecret")
 
