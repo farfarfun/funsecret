@@ -57,7 +57,6 @@ def get_secret_path(secret_dir):
 class SecretTable(Base):
     __tablename__ = "secret"
     __table_args__ = (UniqueConstraint("key"),)
-    id: Mapped[int] = mapped_column(comment="主键", autoincrement=True)
     gmt_create: Mapped[datetime] = mapped_column(
         comment="创建时间", default=datetime.now
     )
