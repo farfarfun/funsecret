@@ -1,6 +1,7 @@
 import base64
 import os
 import time
+from datetime import datetime
 from typing import List
 from urllib.parse import quote_plus
 
@@ -24,7 +25,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from tqdm import tqdm
 
 from funsecret.fernet import decrypt, encrypt
-from datetime import datetime
 
 logger = getLogger("funsecret")
 
@@ -55,7 +55,7 @@ def get_secret_path(secret_dir):
 
 
 class SecretTable(Base):
-    __tablename__ = "secret_table"
+    __tablename__ = "secret"
     __table_args__ = (UniqueConstraint("key"),)
     id: Mapped[int] = mapped_column(
         primary_key=True, comment="主键", autoincrement=True
@@ -139,7 +139,7 @@ class SecretManage:
     def convert_key(
         cate1: str, cate2: str, cate3: str = None, cate4: str = None, cate5: str = None
     ) -> str:
-        return f"{cate1}-{cate2}-{cate3}-{cate4}-{cate5}"
+        return f"{cate1}--{cate2}--{cate3}--{cate4}--{cate5}"
 
     def encrypt(self, text: str, secret: bool = True) -> str:
         """
