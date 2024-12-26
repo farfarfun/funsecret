@@ -4,9 +4,13 @@ import time
 from typing import List
 from urllib.parse import quote_plus
 
+from funutil import getLogger
+from sqlalchemy import String, select, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
 import pandas as pd
 from funsecret.fernet import decrypt, encrypt
-from funutil import getLogger
 from funutil.cache import cache
 from sqlalchemy import (
     BIGINT,
@@ -53,6 +57,15 @@ def get_secret_path(secret_dir):
 class SecretTable(Base):
     __tablename__ = "secret_table"
     __table_args__ = (UniqueConstraint("key"),)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="主键", autoincrement=True
+    )
+    gmt_create: Mapped[datetime] = mapped_column(
+        comment="创建时间", default=datetime.now
+    )
+    gmt_modified: Mapped[datetime] = mapped_column(
+        comment="修改时间", default=datetime.now, onupdate=datetime.now
+    )
 
     key = mapped_column(String(200), comment="key", default="", primary_key=True)
     value = mapped_column(String(500), comment="value", default="")

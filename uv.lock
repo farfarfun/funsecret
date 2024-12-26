@@ -186,7 +186,7 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.38"
+version = "1.4.39"
 source = { virtual = "." }
 dependencies = [
     { name = "cryptography" },
@@ -209,7 +209,7 @@ requires-dist = [
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.38"
+version = "1.4.39"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
