@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List
 from urllib.parse import quote_plus
 
-import pandas as pd
+
 from funutil import getLogger
 from funutil.cache import cache
 from sqlalchemy import (
@@ -95,6 +95,8 @@ class SecretTable(Base):
 
     @staticmethod
     def select_all(engine):
+        import pandas as pd
+
         with engine.begin() as conn:
             return pd.read_sql_table(SecretTable.__tablename__, conn)
 
