@@ -5,13 +5,13 @@ from datetime import datetime
 from typing import List
 from urllib.parse import quote_plus
 
-
 from funutil import getLogger
 from funutil.cache import cache
 from sqlalchemy import (
     BIGINT,
     Engine,
     String,
+    Text,
     UniqueConstraint,
     delete,
     select,
@@ -65,7 +65,7 @@ class SecretTable(Base):
     )
 
     key = mapped_column(String(200), comment="key", default="", primary_key=True)
-    value = mapped_column(String(500), comment="value", default="")
+    value = mapped_column(Text, comment="value", default="")
 
     expire_time = mapped_column(BIGINT, comment="过期时间", default=9999999999)
 

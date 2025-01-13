@@ -1,3 +1,3 @@
-2025-01-06 14:30:40.332 |INFO    | funbuild.core.core : core:  81 | funbuild | - funsecret build
-2025-01-06 14:30:40.337 |INFO    | funbuild.core.core : core:  69 | funbuild | - funsecret pull
-2025-01-06 14:30:52.801 |INFO    | funbuild.core.core : core:  73 | funbuild | - funsecret push
+2025-01-13 20:57:55.546 |INFO    | funbuild.core.core : core:  99 | funbuild | - funsecret build
+2025-01-13 20:57:55.549 |INFO    | funbuild.core.core : core:  84 | funbuild | - funsecret pull
+2025-01-13 20:58:08.717 |INFO    | funbuild.core.core : core:  89 | funbuild | - funsecret push
