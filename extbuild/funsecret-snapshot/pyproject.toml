@@ -1,12 +1,12 @@
 [project]
 name = "funsecret-snapshot"
-version = "1.4.51"
+version = "1.4.52"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [ "funsecret", "funtable>=1.0.8",]
 [[project.authors]]
-name = "niuliangtao"
+name = "牛哥"
 email = "niuliangtao@qq.com"
 
 [[project.authors]]
@@ -14,7 +14,7 @@ name = "farfarfun"
 email = "farfarfun@qq.com"
 
 [[project.maintainers]]
-name = "niuliangtao"
+name = "牛哥"
 email = "niuliangtao@qq.com"
 
 [[project.maintainers]]
