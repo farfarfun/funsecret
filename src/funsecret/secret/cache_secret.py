@@ -16,7 +16,7 @@ class CacheSecretManage:
         if secret_dir is None:
             secret_dir = os.environ.get("FUN_CACHE_SECRET_PATH")
         if secret_dir is None:
-            secret_dir = f'{os.environ.get("FUN_CACHE_SECRET_HOME") or os.environ["HOME"]}/.secret/cache'
+            secret_dir = f"{os.environ.get('FUN_CACHE_SECRET_HOME') or os.environ['HOME']}/.secret/cache"
         self.cache = Cache(directory=secret_dir)
         self.cipher_key = (
             cipher_key

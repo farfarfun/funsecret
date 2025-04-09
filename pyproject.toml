@@ -1,13 +1,30 @@
 [project]
 name = "funsecret"
-version = "1.4.50"
+version = "1.4.51"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3", "funutil>=1.0.15", "orjson>=3.10.10", "sqlalchemy>=2.0.35", "tqdm>=4.67.0",]
 [[project.authors]]
 name = "niuliangtao"
+email = "niuliangtao@qq.com"
+
+[[project.authors]]
+name = "farfarfun"
 email = "farfarfun@qq.com"
+
+[[project.maintainers]]
+name = "niuliangtao"
+email = "niuliangtao@qq.com"
+
+[[project.maintainers]]
+name = "farfarfun"
+email = "farfarfun@qq.com"
+
+[project.urls]
+Organization = "https://github.com/farfarfun"
+Repository = "https://github.com/farfarfun/funsecret"
+Releases = "https://github.com/farfarfun/funsecret/releases"
 
 [tool.setuptools]
 license-files = []

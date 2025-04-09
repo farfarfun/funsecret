@@ -1,3 +1,14 @@
-2025-01-17 10:53:51.897 |INFO    | funbuild.core.core : core:  99 | funbuild | - funsecret build
-2025-01-17 10:53:51.903 |INFO    | funbuild.core.core : core:  84 | funbuild | - funsecret pull
-2025-01-17 10:54:04.068 |INFO    | funbuild.core.core : core:  89 | funbuild | - funsecret push
+2025-04-09 15:30:42.996 |INFO    | funbuild.core.core : core: 127 | funbuild | - funsecret build
+2025-04-09 15:30:43.001 |INFO    | funbuild.core.core : core: 106 | funbuild | - funsecret pull
+2025-04-09 15:30:52.967 |INFO    | funbuild.core.core : core: 111 | funbuild | - funsecret push
+2025-04-09 15:32:11.373 |INFO    | funbuild.core.core : core:  31 | funbuild | - [Generated commit message]
+功能：添加快照功能并更新项目元数据
+
+- 新增快照模块，包含load_snapshot和save_snapshot功能
+- 更新pyproject.toml中的版本号至1.4.51
+- 添加项目作者和维护者信息
+- 添加项目相关URL链接
+- 修改cache_secret.py中的路径处理逻辑
+- 更新日志文件中的时间戳
+
+此次提交主要添加了数据快照功能，允许对驱动数据进行备份和恢复。同时更新了项目元数据信息，包括版本号、作者和维护者信息等。
