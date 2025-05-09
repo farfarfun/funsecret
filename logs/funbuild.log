@@ -1,12 +1,8 @@
-2025-05-08 20:19:58.647 |INFO    | funbuild.core.core : core: 127 | funbuild | - funsecret build
-2025-05-08 20:19:58.655 |INFO    | funbuild.core.core : core: 106 | funbuild | - funsecret pull
-2025-05-08 20:20:06.810 |INFO    | funbuild.core.core : core: 111 | funbuild | - funsecret push
-2025-05-08 20:20:24.989 |INFO    | funbuild.core.core : core:  31 | funbuild | - [Generated commit message]
-功能：更新版本号并添加MySQL依赖项
+2025-05-09 10:33:42.095 |INFO    | funbuild.core.core : core: 111 | funbuild | - funsecret push
+2025-05-09 10:33:57.730 |INFO    | funbuild.core.core : core:  31 | funbuild | - [Generated commit message]
+chore: 清理并轮转日志文件
 
-- 将funsecret和funsecret-snapshot版本号从1.4.52更新至1.4.53
-- 清理并轮转日志文件，移除旧日志记录
-- 在pyproject.toml中添加MySQL可选依赖项(pymysql和mysqlclient)
-- 新增日志压缩文件记录最新构建操作
+- 删除多个旧的压缩日志文件(all.*.log.gz和funbuild.*.log.gz)
+- 清理当前日志文件内容，只保留最新的一条日志记录
 
-此次变更主要为常规版本更新和依赖管理增强，添加了对MySQL数据库的可选支持。
+此次变更为常规的日志维护操作，移除了不再需要的旧日志文件并精简了当前日志内容。
