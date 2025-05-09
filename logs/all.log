@@ -1,8 +1,0 @@
-2025-05-09 10:33:42.095 |INFO    | funbuild.core.core : core: 111 | funbuild | - funsecret push
-2025-05-09 10:33:57.730 |INFO    | funbuild.core.core : core:  31 | funbuild | - [Generated commit message]
-chore: 清理并轮转日志文件
-
-- 删除多个旧的压缩日志文件(all.*.log.gz和funbuild.*.log.gz)
-- 清理当前日志文件内容，只保留最新的一条日志记录
-
-此次变更为常规的日志维护操作，移除了不再需要的旧日志文件并精简了当前日志内容。
