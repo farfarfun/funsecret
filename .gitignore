@@ -1,3 +1,4 @@
 example/download
 */__pycache__
 *.pyc
+logs
