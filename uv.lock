@@ -417,6 +417,20 @@ wheels = [
 ]
 
 [[package]]
+name = "funcache-tau"
+version = "1.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cachebox" },
+    { name = "diskcache" },
+    { name = "funlog-tau" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e5/ff/8a71b761fd08b75c783b17955bcd4721dae67f16271067bb2e4a3cbe78da/funcache_tau-1.0.4.tar.gz", hash = "sha256:afb83200802921e27177bfc6acc191548b03f24b166350401579cf308b08123d", size = 7534, upload-time = "2026-02-11T11:54:28.261Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/e8/2c9a909ebb54c943ce4ef872beea086652f4457b82551a7d203affcaf545/funcache_tau-1.0.4-py3-none-any.whl", hash = "sha256:9351f6a68e818cb63cdd0a2a459647d7a24b89dcc1b1e21ffcf5918d2abc9741", size = 7258, upload-time = "2026-02-11T11:54:27.37Z" },
+]
+
+[[package]]
 name = "funlog-tau"
 version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -430,10 +444,11 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.63"
+version = "1.4.64"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
+    { name = "funcache-tau" },
     { name = "funlog-tau" },
     { name = "orjson", version = "3.10.15", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "orjson", version = "3.11.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
@@ -452,6 +467,7 @@ mysql = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=43.0.3" },
+    { name = "funcache-tau", specifier = ">=1.0.4" },
     { name = "funlog-tau", specifier = ">=1.0.1" },
     { name = "mysqlclient", marker = "extra == 'mysql'", specifier = ">=2.2.7" },
     { name = "orjson", specifier = ">=3.10.10" },
@@ -463,7 +479,7 @@ provides-extras = ["mysql"]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.63"
+version = "1.4.64"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },

@@ -1,10 +1,10 @@
 [project]
 name = "funsecret"
-version = "1.4.63"
+version = "1.4.64"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.7"
-dependencies = [ "cryptography>=43.0.3", "funlog-tau>=1.0.1", "orjson>=3.10.10", "sqlalchemy>=2.0.35", "tqdm>=4.67.0",]
+dependencies = [ "cryptography>=43.0.3", "funcache-tau>=1.0.4", "funlog-tau>=1.0.1", "orjson>=3.10.10", "sqlalchemy>=2.0.35", "tqdm>=4.67.0",]
 [[project.authors]]
 name = "niuliangtao"
 email = "farfarfun@qq.com"
