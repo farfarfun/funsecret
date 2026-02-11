@@ -447,11 +447,10 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.59"
+version = "1.4.60"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
-    { name = "diskcache" },
     { name = "funcache-tau" },
     { name = "funlog-tau" },
     { name = "orjson", version = "3.10.15", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -471,7 +470,6 @@ mysql = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=43.0.3" },
-    { name = "diskcache", specifier = ">=5.6.3" },
     { name = "funcache-tau", specifier = ">=0.1.2" },
     { name = "funlog-tau", specifier = ">=1.0.1" },
     { name = "mysqlclient", marker = "extra == 'mysql'", specifier = ">=2.2.7" },
@@ -484,7 +482,7 @@ provides-extras = ["mysql"]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.59"
+version = "1.4.60"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
