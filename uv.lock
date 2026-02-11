@@ -417,23 +417,6 @@ wheels = [
 ]
 
 [[package]]
-name = "funcache-tau"
-version = "0.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cachebox" },
-    { name = "cachetools", version = "5.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "cachetools", version = "6.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
-    { name = "cachetools", version = "7.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "diskcache" },
-    { name = "funlog-tau" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9a/25/5043e99516561a30b96c1f52bcd3edfaf18d2688edc88aed7ef4d75fd5d9/funcache_tau-0.1.2.tar.gz", hash = "sha256:84438f83666c17568ba7551a6a29d227a95ac01880e48f4bf988fe32e28f413b", size = 3748, upload-time = "2026-02-11T11:43:45.357Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/44/31e2a35ac1613da947bc48aa4c38f25f7519f29a66647a0f1a33c7f4c01d/funcache_tau-0.1.2-py3-none-any.whl", hash = "sha256:42e90d69706ba8d9b058065cd60a37ed3e46e4aca25082738a1313683ed069b8", size = 5637, upload-time = "2026-02-11T11:43:46.729Z" },
-]
-
-[[package]]
 name = "funlog-tau"
 version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -447,11 +430,10 @@ wheels = [
 
 [[package]]
 name = "funsecret"
-version = "1.4.60"
+version = "1.4.63"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
-    { name = "funcache-tau" },
     { name = "funlog-tau" },
     { name = "orjson", version = "3.10.15", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "orjson", version = "3.11.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
@@ -470,7 +452,6 @@ mysql = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=43.0.3" },
-    { name = "funcache-tau", specifier = ">=0.1.2" },
     { name = "funlog-tau", specifier = ">=1.0.1" },
     { name = "mysqlclient", marker = "extra == 'mysql'", specifier = ">=2.2.7" },
     { name = "orjson", specifier = ">=3.10.10" },
@@ -482,7 +463,7 @@ provides-extras = ["mysql"]
 
 [[package]]
 name = "funsecret-snapshot"
-version = "1.4.60"
+version = "1.4.63"
 source = { virtual = "extbuild/funsecret-snapshot" }
 dependencies = [
     { name = "funsecret" },
