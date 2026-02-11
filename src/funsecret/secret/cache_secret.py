@@ -4,7 +4,7 @@ import os
 from urllib.parse import quote_plus
 
 from diskcache import Cache
-from funutil import getLogger
+from funlog import getLogger
 
 from funsecret.fernet import decrypt, encrypt
 
