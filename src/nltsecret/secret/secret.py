@@ -94,13 +94,6 @@ class SecretTable(Base):
         session.commit()
 
     @staticmethod
-    def select_all(engine):
-        import pandas as pd
-
-        with engine.begin() as conn:
-            return pd.read_sql_table(SecretTable.__tablename__, conn)
-
-    @staticmethod
     def delete_all(engine: Engine):
         logger.warning(f"delete_all:{SecretTable.__tablename__}")
         with Session(engine) as session:

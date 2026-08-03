@@ -1,10 +1,10 @@
 [project]
 name = "nltsecret-snapshot"
-version = "1.4.82"
+version = "1.4.83"
 description = "nltsecret"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [ "nltsecret", "funtable>=1.0.8",]
+dependencies = [ "fundrive>=2.0.57", "nltsecret", "funtable>=1.0.8",]
 [[project.authors]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
