@@ -5,8 +5,8 @@ from datetime import datetime
 from typing import List
 from urllib.parse import quote_plus
 
-from nltcache import cache
-from nltlog import getLogger
+from farcache import cache
+from farlog import getLogger
 from sqlalchemy import (
     BIGINT,
     Engine,
