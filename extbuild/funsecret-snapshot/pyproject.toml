@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "funsecret-snapshot"
-version = "1.4.84"
+version = "1.4.85"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-dependencies = [ "fundrive>=2.0.57", "funsecret>=1.4.84", "funtable>=1.0.8",]
+dependencies = [ "fundrive>=2.0.57", "funsecret>=1.4.84", "funtable>=1.0.46",]
 [[project.authors]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
