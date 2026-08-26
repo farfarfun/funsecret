@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "funsecret"
-version = "1.4.84"
+version = "1.4.86"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-license-files = [ "LICENSE",]
+license-files = ["LICENSE"]
 dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3,<6", "nltcache>=1.0.7", "nltlog>=1.0.14", "sqlalchemy>=2.0.35", "tqdm>=4.67.0", "typer>=0.12.5",]
 [[project.authors]]
 name = "牛哥"
@@ -18,7 +18,6 @@ email = "niuliangtao@qq.com"
 [[project.authors]]
 name = "farfarfun"
 email = "farfarfun@qq.com"
-
 [[project.maintainers]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
@@ -26,7 +25,6 @@ email = "niuliangtao@qq.com"
 [[project.maintainers]]
 name = "farfarfun"
 email = "farfarfun@qq.com"
-
 [project.urls]
 Organization = "https://github.com/farfarfun"
 Repository = "https://github.com/farfarfun/funsecret"
@@ -36,7 +34,8 @@ Releases = "https://github.com/farfarfun/funsecret/releases"
 funsecret = "funsecret.cli:app"
 
 [project.optional-dependencies]
-mysql = [ "pymysql>=1.1.1", "mysqlclient>=2.2.7",]
+mysql = [ "pymysql>=1.1.1",]
+mysqlclient = [ "mysqlclient>=2.2.7",]
 
 [tool.uv.workspace]
 members = [ "extbuild/funsecret-snapshot", "extbuild/nltsecret-compat", "extbuild/nltsecret-snapshot-compat",]

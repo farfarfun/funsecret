@@ -37,7 +37,7 @@ def _iter_secret_paths(tree: SecretTree, prefix: Optional[List[str]] = None):
 def read(
     categories: List[str] = typer.Argument(
         ..., metavar="CATE1 CATE2 [CATE3] [CATE4] [CATE5]", help="Secret category path"
-    )
+    ),
 ) -> None:
     if len(categories) < 2 or len(categories) > 5:
         raise typer.BadParameter("read requires 2 to 5 category arguments")
@@ -86,10 +86,14 @@ def info() -> None:
 
 @app.command()
 def clear(
-    yes: bool = typer.Option(False, "--yes", help="Clear all secrets without confirmation"),
+    yes: bool = typer.Option(
+        False, "--yes", help="Clear all secrets without confirmation"
+    ),
 ) -> None:
     if not yes:
-        confirmed = typer.confirm("This will delete all stored secrets. Continue?", default=False)
+        confirmed = typer.confirm(
+            "This will delete all stored secrets. Continue?", default=False
+        )
         if not confirmed:
             raise typer.Exit(code=1)
     clear_secret_db()
@@ -99,7 +103,9 @@ def clear(
 @app.command()
 def load(
     db_url: str = typer.Argument(..., help="Database URL to load secrets from"),
-    cipher_key: Optional[str] = typer.Option(None, help="Cipher key for the source database"),
+    cipher_key: Optional[str] = typer.Option(
+        None, help="Cipher key for the source database"
+    ),
 ) -> None:
     load_secret_db(url=db_url, cipher_key=cipher_key)
 
@@ -107,7 +113,9 @@ def load(
 @app.command()
 def save(
     db_url: str = typer.Argument(..., help="Database URL to save secrets to"),
-    cipher_key: Optional[str] = typer.Option(None, help="Cipher key for the target database"),
+    cipher_key: Optional[str] = typer.Option(
+        None, help="Cipher key for the target database"
+    ),
 ) -> None:
     save_secret_db(url=db_url, cipher_key=cipher_key)
 

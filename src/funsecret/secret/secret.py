@@ -122,7 +122,9 @@ class SecretManage:
         if secret_url is not None:
             self.engine = create_engine(secret_url)
         else:
-            self.engine = create_engine(f"sqlite:///{_sqlite_database_path(secret_dir)}")
+            self.engine = create_engine(
+                f"sqlite:///{_sqlite_database_path(secret_dir)}"
+            )
 
         if cipher_key:
             self.cipher_key = cipher_key
