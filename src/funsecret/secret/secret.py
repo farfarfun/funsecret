@@ -24,9 +24,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from tqdm import tqdm
 
-from nltsecret.fernet import decrypt, encrypt
+from funsecret.fernet import decrypt, encrypt
 
-logger = getLogger("nltsecret")
+logger = getLogger("funsecret")
 
 
 class Base(DeclarativeBase):
@@ -52,6 +52,12 @@ def get_secret_path(secret_dir):
     if not os.path.exists(secret_dir):
         os.makedirs(secret_dir)
     return secret_dir
+
+
+def _sqlite_database_path(secret_dir):
+    current = os.path.join(secret_dir, ".funsecret.db")
+    legacy = os.path.join(secret_dir, ".nltsecret.db")
+    return legacy if os.path.exists(legacy) and not os.path.exists(current) else current
 
 
 class SecretTable(Base):
@@ -116,7 +122,7 @@ class SecretManage:
         if secret_url is not None:
             self.engine = create_engine(secret_url)
         else:
-            self.engine = create_engine(f"sqlite:///{secret_dir}/.nltsecret.db")
+            self.engine = create_engine(f"sqlite:///{_sqlite_database_path(secret_dir)}")
 
         if cipher_key:
             self.cipher_key = cipher_key

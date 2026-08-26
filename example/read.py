@@ -1,4 +1,4 @@
-from nltsecret import read_secret
+from funsecret import read_secret
 
 read_secret("baidu", "secret", "accessToken", value="this is accessToken")
 read_secret("baidu", "secret", "refreshToken", value="this is refreshToken")

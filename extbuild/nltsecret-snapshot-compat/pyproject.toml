@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nltsecret-snapshot"
+version = "1.4.84"
+description = "Compatibility package for funsecret-snapshot"
+requires-python = ">=3.8"
+license = "MIT"
+dependencies = ["funsecret-snapshot>=1.4.84"]

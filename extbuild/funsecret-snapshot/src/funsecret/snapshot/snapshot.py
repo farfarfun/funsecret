@@ -1,10 +1,10 @@
 import os
 
 from fundrive.core import BaseDrive
-from nltsecret import SecretManage
-from funtable import DriveSnapshot
+from funsecret import SecretManage
+from funtable.snapshot import DriveSnapshot
 
-cache_tmp = "./tmp/nltsecret.cache"
+cache_tmp = "./tmp/funsecret.cache"
 
 
 def save_snapshot(table_fid, drive: BaseDrive):

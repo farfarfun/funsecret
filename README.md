@@ -1,6 +1,8 @@
-# nltsecret
+# funsecret
 
-`nltsecret` 是一个简单的本地密钥管理工具。
+`funsecret` 是一个简单的本地密钥管理工具。
+
+原 `nltsecret` 已迁回 `funsecret`；旧包和命令保留兼容入口。
 
 适合存这些内容：
 - 账号密码
@@ -13,13 +15,13 @@
 ## 安装
 
 ```bash
-pip install nltsecret
+pip install funsecret
 ```
 
 如果你要同步到 MySQL：
 
 ```bash
-pip install "nltsecret[mysql]"
+pip install "funsecret[mysql]"
 ```
 
 如果你修改了本仓库源码并希望本地直接使用命令：
@@ -33,37 +35,37 @@ pip install -e .
 写入一个 secret：
 
 ```bash
-nltsecret write my-password app prod mysql password
+funsecret write my-password app prod mysql password
 ```
 
 读取一个 secret：
 
 ```bash
-nltsecret read app prod mysql password
+funsecret read app prod mysql password
 ```
 
 查看有哪些 key，只显示路径，不显示 value：
 
 ```bash
-nltsecret list
+funsecret list
 ```
 
 查看当前存储信息：
 
 ```bash
-nltsecret info
+funsecret info
 ```
 
 清空当前本地 secret：
 
 ```bash
-nltsecret clear
+funsecret clear
 ```
 
 跳过确认直接清空：
 
 ```bash
-nltsecret clear --yes
+funsecret clear --yes
 ```
 
 ## 命令说明
@@ -71,33 +73,33 @@ nltsecret clear --yes
 ### `write`
 
 ```bash
-nltsecret write VALUE CATE1 CATE2 [CATE3] [CATE4] [CATE5]
+funsecret write VALUE CATE1 CATE2 [CATE3] [CATE4] [CATE5]
 ```
 
 示例：
 
 ```bash
-nltsecret write sk-xxxxx openai prod api_key
-nltsecret write root123 mysql local root password
+funsecret write sk-xxxxx openai prod api_key
+funsecret write root123 mysql local root password
 ```
 
 ### `read`
 
 ```bash
-nltsecret read CATE1 CATE2 [CATE3] [CATE4] [CATE5]
+funsecret read CATE1 CATE2 [CATE3] [CATE4] [CATE5]
 ```
 
 示例：
 
 ```bash
-nltsecret read openai prod api_key
-nltsecret read mysql local root password
+funsecret read openai prod api_key
+funsecret read mysql local root password
 ```
 
 ### `list`
 
 ```bash
-nltsecret list
+funsecret list
 ```
 
 输出示例：
@@ -112,18 +114,18 @@ mysql local root password
 ### `info`
 
 ```bash
-nltsecret info
+funsecret info
 ```
 
 输出示例：
 
 ```text
 backend: sqlite
-database_url: sqlite:////Users/you/.secret/.nltsecret.db
-database_file: /Users/you/.secret/.nltsecret.db
+database_url: sqlite:////Users/you/.secret/.funsecret.db
+database_file: /Users/you/.secret/.funsecret.db
 secret_count: 2
 cipher_key_configured: yes
-mysql_example_url: mysql+pymysql://username:password@127.0.0.1:3306/nltsecret
+mysql_example_url: mysql+pymysql://username:password@127.0.0.1:3306/funsecret
 ```
 
 ### `save`
@@ -131,19 +133,19 @@ mysql_example_url: mysql+pymysql://username:password@127.0.0.1:3306/nltsecret
 把当前本地 secret 保存到一个数据库。
 
 ```bash
-nltsecret save DB_URL
+funsecret save DB_URL
 ```
 
 保存到 MySQL：
 
 ```bash
-nltsecret save mysql+pymysql://username:password@127.0.0.1:3306/nltsecret
+funsecret save mysql+pymysql://username:password@127.0.0.1:3306/funsecret
 ```
 
 如果传了 `--cipher-key`，写入目标库时会加密：
 
 ```bash
-nltsecret save mysql+pymysql://username:password@127.0.0.1:3306/nltsecret --cipher-key my-secret-key
+funsecret save mysql+pymysql://username:password@127.0.0.1:3306/funsecret --cipher-key my-secret-key
 ```
 
 如果不传 `--cipher-key`，保存到目标库时不加密。
@@ -153,19 +155,19 @@ nltsecret save mysql+pymysql://username:password@127.0.0.1:3306/nltsecret --ciph
 从一个数据库加载 secret 到当前本地库。
 
 ```bash
-nltsecret load DB_URL
+funsecret load DB_URL
 ```
 
 从 MySQL 加载：
 
 ```bash
-nltsecret load mysql+pymysql://username:password@127.0.0.1:3306/nltsecret
+funsecret load mysql+pymysql://username:password@127.0.0.1:3306/funsecret
 ```
 
 如果源库里的数据是加密的，可以传 `--cipher-key`：
 
 ```bash
-nltsecret load mysql+pymysql://username:password@127.0.0.1:3306/nltsecret --cipher-key my-secret-key
+funsecret load mysql+pymysql://username:password@127.0.0.1:3306/funsecret --cipher-key my-secret-key
 ```
 
 如果不传 `--cipher-key`，默认按未加密数据读取。
@@ -175,7 +177,7 @@ nltsecret load mysql+pymysql://username:password@127.0.0.1:3306/nltsecret --ciph
 写入：
 
 ```python
-from nltsecret import write_secret
+from funsecret import write_secret
 
 write_secret("my-password", "app", "prod", "mysql", "password")
 write_secret("sk-xxxxx", "openai", "prod", "api_key")
@@ -184,7 +186,7 @@ write_secret("sk-xxxxx", "openai", "prod", "api_key")
 读取：
 
 ```python
-from nltsecret import read_secret
+from funsecret import read_secret
 
 password = read_secret("app", "prod", "mysql", "password")
 api_key = read_secret("openai", "prod", "api_key")
@@ -193,7 +195,7 @@ api_key = read_secret("openai", "prod", "api_key")
 也可以用 `read_secret(..., value=...)` 直接写入：
 
 ```python
-from nltsecret import read_secret
+from funsecret import read_secret
 
 read_secret("app", "prod", "mysql", "password", value="my-password")
 ```
@@ -203,8 +205,10 @@ read_secret("app", "prod", "mysql", "password", value="my-password")
 默认使用本地 sqlite：
 
 ```text
-~/.secret/.nltsecret.db
+~/.secret/.funsecret.db
 ```
+
+若该目录已有 `.nltsecret.db` 且尚无 `.funsecret.db`，会继续使用旧数据库，现有密钥无需搬迁。
 
 也可以通过环境变量控制：
 - `FUN_SECRET_PATH`：本地 secret 目录
@@ -215,13 +219,13 @@ read_secret("app", "prod", "mysql", "password", value="my-password")
 快照功能需要单独安装：
 
 ```bash
-pip install nltsecret_snapshot
+pip install funsecret-snapshot
 ```
 
 保存快照：
 
 ```python
-from nltsecret_snapshot import save_snapshot
+from funsecret.snapshot import save_snapshot
 
 save_snapshot(bin_id, cipher_key, security_key)
 ```
@@ -229,7 +233,7 @@ save_snapshot(bin_id, cipher_key, security_key)
 读取快照：
 
 ```python
-from nltsecret_snapshot import load_snapshot
+from funsecret.snapshot import load_snapshot
 
 load_snapshot(bin_id, cipher_key, security_key)
 ```

@@ -6,9 +6,9 @@ from urllib.parse import quote_plus
 from diskcache import Cache
 from nltlog import getLogger
 
-from nltsecret.fernet import decrypt, encrypt
+from funsecret.fernet import decrypt, encrypt
 
-logger = getLogger("nltsecret")
+logger = getLogger("funsecret")
 
 
 class CacheSecretManage:

@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 
 import typer
 
-from nltsecret import (
+from funsecret import (
     SecretManage,
     clear_secret_db,
     list_sectet,
@@ -13,14 +13,14 @@ from nltsecret import (
     write_secret,
 )
 
-app = typer.Typer(help="nltsecret command line interface")
+app = typer.Typer(help="funsecret command line interface")
 SecretTree = Dict[str, Union[str, "SecretTree"]]
-MYSQL_EXAMPLE_URL = "mysql+pymysql://username:password@127.0.0.1:3306/nltsecret"
+MYSQL_EXAMPLE_URL = "mysql+pymysql://username:password@127.0.0.1:3306/funsecret"
 
 
 @app.callback()
 def main() -> None:
-    """nltsecret command group."""
+    """funsecret command group."""
 
 
 def _iter_secret_paths(tree: SecretTree, prefix: Optional[List[str]] = None):
