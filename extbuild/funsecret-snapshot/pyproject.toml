@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "funsecret-snapshot"
-version = "1.4.88"
+version = "1.4.92"
 description = "funsecret"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 dependencies = [ "fundrive>=2.0.57", "funsecret>=1.4.84", "funtable>=1.0.46",]
 [[project.authors]]
