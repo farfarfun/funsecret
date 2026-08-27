@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import typer
+from farlog import configure
 
 from funsecret import (
     SecretManage,
@@ -21,6 +22,7 @@ MYSQL_EXAMPLE_URL = "mysql+pymysql://username:password@127.0.0.1:3306/funsecret"
 @app.callback()
 def main() -> None:
     """funsecret command group."""
+    configure()
 
 
 def _iter_secret_paths(tree: SecretTree, prefix: Optional[List[str]] = None):
