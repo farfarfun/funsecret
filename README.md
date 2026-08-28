@@ -2,8 +2,6 @@
 
 `funsecret` 是一个简单的本地密钥管理工具。
 
-原 `nltsecret` 已迁回 `funsecret`；旧包和命令保留兼容入口。
-
 适合存这些内容：
 - 账号密码
 - token / access key
@@ -207,8 +205,6 @@ read_secret("app", "prod", "mysql", "password", value="my-password")
 ```text
 ~/.secret/.funsecret.db
 ```
-
-若该目录已有 `.nltsecret.db` 且尚无 `.funsecret.db`，会继续使用旧数据库，现有密钥无需搬迁。
 
 也可以通过环境变量控制：
 - `FUN_SECRET_PATH`：本地 secret 目录

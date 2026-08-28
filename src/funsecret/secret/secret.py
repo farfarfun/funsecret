@@ -54,12 +54,6 @@ def get_secret_path(secret_dir):
     return secret_dir
 
 
-def _sqlite_database_path(secret_dir):
-    current = os.path.join(secret_dir, ".funsecret.db")
-    legacy = os.path.join(secret_dir, ".nltsecret.db")
-    return legacy if os.path.exists(legacy) and not os.path.exists(current) else current
-
-
 class SecretTable(Base):
     __tablename__ = "secret"
     __table_args__ = (UniqueConstraint("key"),)
@@ -123,7 +117,7 @@ class SecretManage:
             self.engine = create_engine(secret_url)
         else:
             self.engine = create_engine(
-                f"sqlite:///{_sqlite_database_path(secret_dir)}"
+                f"sqlite:///{os.path.join(secret_dir, '.funsecret.db')}"
             )
 
         if cipher_key:
