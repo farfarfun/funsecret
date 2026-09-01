@@ -81,17 +81,27 @@ class SecretTable(Base):
     def to_dict(self):
         return {"key": self.key, "value": self.value, "expire_time": self.expire_time}
 
-    def upsert(self, session: Session, update_data=True):
+    def upsert(
+        self, session: Session, update_data=True, commit=True, existing_keys=None
+    ):
         logger.debug(f"upsert:{self.to_dict()}")
-        if not self.exists(session):
+        key_exists = (
+            self.key in existing_keys
+            if existing_keys is not None
+            else self.exists(session)
+        )
+        if not key_exists:
             session.execute(insert(SecretTable).values(**self.to_dict()))
+            if existing_keys is not None:
+                existing_keys.add(self.key)
         elif update_data:
             session.execute(
                 update(SecretTable)
                 .where(SecretTable.key == self.key)
                 .values(**self.to_dict())
             )
-        session.commit()
+        if commit:
+            session.commit()
 
     @staticmethod
     def delete_all(engine: Engine):
@@ -324,6 +334,9 @@ def list_sectet(secret=True):
 
 def _syc_secret_db(manage1, manage2, source_secret=True, target_secret=True):
     with Session(manage2.engine) as session:
+        existing_keys = {
+            row[0] for row in session.execute(select(SecretTable.key)).all()
+        }
         pbar = tqdm(manage1.scalars())
         success = 0
         for entity in pbar:
@@ -336,11 +349,13 @@ def _syc_secret_db(manage1, manage2, source_secret=True, target_secret=True):
                     manage1.decrypt(entity.value, secret=source_secret),
                     secret=target_secret,
                 )
-                entity.upsert(session)
+                entity.upsert(session, commit=False, existing_keys=existing_keys)
                 success += 1
                 pbar.set_description(f"success: {success}")
             except Exception as e:
                 logger.error(e)
+                session.rollback()
+        session.commit()
 
 
 def load_secret_db(url=None, cipher_key=None):
