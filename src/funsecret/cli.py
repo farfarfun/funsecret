@@ -17,6 +17,7 @@ from funsecret import (
 app = typer.Typer(help="funsecret command line interface")
 SecretTree = Dict[str, Union[str, "SecretTree"]]
 MYSQL_EXAMPLE_URL = "mysql+pymysql://username:password@127.0.0.1:3306/funsecret"
+DEFAULT_DB_URL_CATEGORY = ("funsecret", "db", "url")
 
 
 @app.callback()
@@ -102,24 +103,43 @@ def clear(
     typer.echo("cleared")
 
 
+def _resolve_db_url(db_url: Optional[str]) -> str:
+    if db_url:
+        return db_url
+    stored = read_secret(*DEFAULT_DB_URL_CATEGORY)
+    if not stored:
+        category = " ".join(DEFAULT_DB_URL_CATEGORY)
+        raise typer.BadParameter(
+            "No database URL given and no default is stored. "
+            f"Pass a URL, or store a default with: funsecret write <url> {category}"
+        )
+    return stored
+
+
 @app.command()
 def load(
-    db_url: str = typer.Argument(..., help="Database URL to load secrets from"),
+    db_url: Optional[str] = typer.Argument(
+        None,
+        help="Database URL to load secrets from (defaults to the stored default URL if omitted)",
+    ),
     cipher_key: Optional[str] = typer.Option(
         None, help="Cipher key for the source database"
     ),
 ) -> None:
-    load_secret_db(url=db_url, cipher_key=cipher_key)
+    load_secret_db(url=_resolve_db_url(db_url), cipher_key=cipher_key)
 
 
 @app.command()
 def save(
-    db_url: str = typer.Argument(..., help="Database URL to save secrets to"),
+    db_url: Optional[str] = typer.Argument(
+        None,
+        help="Database URL to save secrets to (defaults to the stored default URL if omitted)",
+    ),
     cipher_key: Optional[str] = typer.Option(
         None, help="Cipher key for the target database"
     ),
 ) -> None:
-    save_secret_db(url=db_url, cipher_key=cipher_key)
+    save_secret_db(url=_resolve_db_url(db_url), cipher_key=cipher_key)
 
 
 if __name__ == "__main__":
