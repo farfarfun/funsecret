@@ -11,9 +11,9 @@ from .fernet import (
 __all__ = [
     "decrypt",
     "encrypt",
+    "file_decrypt",
+    "file_encrypt",
     "generate_key",
     "get_md5_file",
     "get_md5_str",
-    "file_decrypt",
-    "file_encrypt",
 ]

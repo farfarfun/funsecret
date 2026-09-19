@@ -1,89 +1,83 @@
+"""字符串与文件加解密工具。"""
+
 import hashlib
+from pathlib import Path
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
+from farlog import getLogger
+
+logger = getLogger("funsecret")
 
 
-def generate_key():
+def generate_key() -> str:
+    """生成可用于 Fernet 加解密的密钥。"""
     return Fernet.generate_key().decode()
 
 
-def encrypt(text, cipher_key=None):
-    """
-    加密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
-    :param text: 需要加密的文本
-    :param cipher_key: 加密key
-    :return: 加密后的文本
-    """
+def encrypt(text: str | None, cipher_key: str | None = None) -> str | None:
+    """使用指定密钥加密文本；未提供文本或密钥时原样返回。"""
     if cipher_key is None or text is None:
         return text
-    cipher = Fernet(bytes(cipher_key, encoding="utf8"))
-    # return cipher.encrypt(text.encode()).decode()
-    return cipher._encrypt_from_parts(
-        text.encode(), 1024, "123456789abcdefg".encode("utf-8")
-    ).decode()
+    cipher = Fernet(cipher_key.encode())
+    # 数据库使用密文作为查询键，因此保留历史上的确定性加密格式。
+    return cipher._encrypt_from_parts(text.encode(), 1024, b"123456789abcdefg").decode()
 
 
-def file_encrypt(src_path, dst_path=None, cipher_key=None):
+def file_encrypt(
+    src_path: str | Path,
+    dst_path: str | Path | None = None,
+    cipher_key: str | None = None,
+) -> str:
+    """加密文件并返回目标路径。"""
     if cipher_key is None:
-        raise Exception("cipher_key cannot be None.")
-    cipher = Fernet(bytes(cipher_key, encoding="utf8"))
-    if dst_path is None:
-        dst_path = src_path + ".crypt"
-    with open(dst_path, "wb") as fw:
-        with open(src_path, "rb") as fr:
-            fw.write(cipher.encrypt(fr.read()))
-    return dst_path
+        raise ValueError("cipher_key cannot be None")
+    source = Path(src_path)
+    destination = Path(dst_path) if dst_path is not None else Path(f"{source}.crypt")
+    cipher = Fernet(cipher_key.encode())
+    destination.write_bytes(cipher.encrypt(source.read_bytes()))
+    return str(destination)
 
 
-def file_decrypt(src_path, dst_path=None, cipher_key=None):
+def file_decrypt(
+    src_path: str | Path,
+    dst_path: str | Path | None = None,
+    cipher_key: str | None = None,
+) -> str:
+    """解密文件并返回目标路径。"""
     if cipher_key is None:
-        raise Exception("cipher_key cannot be None.")
-    cipher = Fernet(bytes(cipher_key, encoding="utf8"))
-    if dst_path is None and src_path.endswith(".crypt"):
-        dst_path = src_path.replace(".crypt", "")
+        raise ValueError("cipher_key cannot be None")
+    source = Path(src_path)
+    if dst_path is None and source.suffix == ".crypt":
+        dst_path = source.with_suffix("")
     if dst_path is None:
-        raise Exception("dst_path cannot be None.")
-    with open(dst_path, "wb") as fw:
-        with open(src_path, "rb") as fr:
-            fw.write(cipher.decrypt(fr.read()))
-    return dst_path
+        raise ValueError("dst_path cannot be None")
+    destination = Path(dst_path)
+    cipher = Fernet(cipher_key.encode())
+    destination.write_bytes(cipher.decrypt(source.read_bytes()))
+    return str(destination)
 
 
-def decrypt(encrypted_text, cipher_key=None):
-    """
-    解密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
-    :param cipher_key: 加密key
-    :param encrypted_text: 需要解密的文本
-    :return:解密后的文本
-    """
+def decrypt(encrypted_text: str | None, cipher_key: str | None = None) -> str | None:
+    """解密文本；密文或密钥无效时抛出 ``InvalidToken``。"""
     if cipher_key is None or encrypted_text is None:
         return encrypted_text
-    cipher = Fernet(bytes(cipher_key, encoding="utf8"))
+    cipher = Fernet(cipher_key.encode())
     try:
-        return cipher.decrypt(bytes(encrypted_text, encoding="utf8")).decode()
-    except Exception as e:
-        print(e)
-        return encrypted_text
+        return cipher.decrypt(encrypted_text.encode()).decode()
+    except InvalidToken:
+        logger.warning("密文解密失败，请检查密钥和输入")
+        raise
 
 
-def get_md5_str(strs: str):
-    """
-    计算字符串md5值
-    :param strs: 输入字符串
-    :return: 字符串md5
-    """
-    m = hashlib.md5()
-    m.update(strs.encode())
-    return m.hexdigest()
+def get_md5_str(value: str) -> str:
+    """计算字符串的 MD5 摘要。"""
+    return hashlib.md5(value.encode(), usedforsecurity=False).hexdigest()
 
 
-def get_md5_file(path, chunk=1024 * 4):
-    m = hashlib.md5()
-    with open(path, "rb") as f:
-        while True:
-            data = f.read(chunk)
-            if not data:
-                break
-            m.update(data)
-
-    return m.hexdigest()
+def get_md5_file(path: str | Path, chunk: int = 4096) -> str:
+    """分块计算文件的 MD5 摘要。"""
+    digest = hashlib.md5(usedforsecurity=False)
+    with Path(path).open("rb") as file:
+        while data := file.read(chunk):
+            digest.update(data)
+    return digest.hexdigest()

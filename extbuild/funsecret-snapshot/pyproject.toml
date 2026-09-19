@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "setuptools>=77",]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "funsecret-snapshot"
-version = "1.4.96"
+version = "1.4.97"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,3 +31,6 @@ Releases = "https://github.com/farfarfun/funsecret/releases"
 
 [tool.uv.sources.funsecret]
 workspace = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/funsecret"]

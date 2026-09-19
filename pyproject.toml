@@ -1,16 +1,16 @@
 [build-system]
-requires = [ "setuptools>=77",]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "funsecret"
-version = "1.4.96"
+version = "1.4.97"
 description = "funsecret"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3,<6", "farcache>=2.0.3", "farlog>=1.1.4", "sqlalchemy>=2.0.35", "tqdm>=4.67.0", "typer>=0.12.5",]
+dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3,<6", "farcache>=2.0.3", "farlog>=1.1.7", "sqlalchemy>=2.0.35", "tqdm>=4.67.0", "typer>=0.12.5",]
 [[project.authors]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
@@ -37,8 +37,8 @@ funsecret = "funsecret.cli:app"
 mysql = [ "pymysql>=1.1.1",]
 mysqlclient = [ "mysqlclient>=2.2.7",]
 
-[tool.setuptools.package-data]
-funsecret = ["py.typed"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/funsecret"]
 
 [tool.uv.workspace]
 members = [ "extbuild/funsecret-snapshot",]

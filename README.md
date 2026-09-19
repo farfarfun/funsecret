@@ -223,7 +223,8 @@ pip install funsecret-snapshot
 ```python
 from funsecret.snapshot import save_snapshot
 
-save_snapshot(bin_id, cipher_key, security_key)
+# drive 是已配置好的 fundrive BaseDrive 实例
+save_snapshot(table_fid="your-table-file-id", drive=drive)
 ```
 
 读取快照：
@@ -231,5 +232,18 @@ save_snapshot(bin_id, cipher_key, security_key)
 ```python
 from funsecret.snapshot import load_snapshot
 
-load_snapshot(bin_id, cipher_key, security_key)
+load_snapshot(table_fid="your-table-file-id", drive=drive)
 ```
+
+---
+
+## 关于 farfarfun
+
+[farfarfun](https://github.com/farfarfun) 是一个专注于实用工具库的开源组织，
+涵盖云存储、数据处理、AI、多媒体与开发工具链等方向。
+
+- 🏠 组织主页：<https://github.com/farfarfun>
+- 📦 PyPI：<https://pypi.org/user/niuliangtao/>
+- 📧 联系：farfarfun@qq.com
+
+本项目基于 [MIT](LICENSE) 协议开源。

@@ -224,6 +224,7 @@ logs/
 # 构建产物（无前导斜杠，任意层级都匹配，含 utools/dist/）
 dist/
 build/
+node_modules/
 
 # 编辑器 / IDE
 .idea/

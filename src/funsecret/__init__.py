@@ -1,3 +1,5 @@
+from pkgutil import extend_path
+
 from .fernet import (
     decrypt,
     encrypt,
@@ -7,37 +9,39 @@ from .fernet import (
     get_md5_file,
     get_md5_str,
 )
+
+__path__ = extend_path(__path__, __name__)
 from .secret import (
+    CacheSecretManage,
     SecretManage,
     SecretTable,
     clear_secret_db,
     list_sectet,
     load_secret_db,
+    read_cache_secret,
     read_secret,
     save_secret_db,
-    write_secret,
-    read_cache_secret,
     write_cache_secret,
-    CacheSecretManage,
+    write_secret,
 )
 
 __all__ = [
-    "read_cache_secret",
-    "decrypt",
-    "encrypt",
-    "generate_key",
-    "get_md5_file",
-    "get_md5_str",
-    "file_decrypt",
-    "file_encrypt",
+    "CacheSecretManage",
     "SecretManage",
     "SecretTable",
     "clear_secret_db",
+    "decrypt",
+    "encrypt",
+    "file_decrypt",
+    "file_encrypt",
+    "generate_key",
+    "get_md5_file",
+    "get_md5_str",
     "list_sectet",
     "load_secret_db",
+    "read_cache_secret",
     "read_secret",
     "save_secret_db",
-    "write_secret",
     "write_cache_secret",
-    "CacheSecretManage",
+    "write_secret",
 ]

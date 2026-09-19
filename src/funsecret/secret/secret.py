@@ -2,7 +2,7 @@ import base64
 import os
 import time
 from datetime import datetime
-from typing import List
+from typing import Any, TypeAlias
 from urllib.parse import quote_plus
 
 from farcache import cache
@@ -27,24 +27,28 @@ from tqdm import tqdm
 from funsecret.fernet import decrypt, encrypt
 
 logger = getLogger("funsecret")
+SecretTree: TypeAlias = dict[str, Any]
 
 
 class Base(DeclarativeBase):
-    pass
+    """SQLAlchemy 声明式模型基类。"""
 
 
 @cache
-def create_engine(uri, *args, **kwargs):
-    return create_engine2(uri)
+def create_engine(uri: str, *args: Any, **kwargs: Any) -> Engine:
+    """创建并缓存数据库引擎。"""
+    return create_engine2(uri, *args, **kwargs)
 
 
-def get_secret_url(secret_url=None):
+def get_secret_url(secret_url: str | None = None) -> str | None:
+    """优先返回显式数据库地址，否则读取环境变量。"""
     if secret_url is not None:
         return secret_url
     return os.environ.get("FUN_SECRET_URL")
 
 
-def get_secret_path(secret_dir):
+def get_secret_path(secret_dir: str | None = None) -> str:
+    """返回本地密钥目录，并在缺失时创建。"""
     secret_dir = secret_dir or "~/.secret"
     secret_dir = secret_dir.replace(
         "~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"])
@@ -55,6 +59,8 @@ def get_secret_path(secret_dir):
 
 
 class SecretTable(Base):
+    """数据库中的单条密钥记录。"""
+
     __tablename__ = "secret"
     __table_args__ = (UniqueConstraint("key"),)
     gmt_create: Mapped[datetime] = mapped_column(
@@ -64,13 +70,18 @@ class SecretTable(Base):
         comment="修改时间", default=datetime.now, onupdate=datetime.now
     )
 
-    key = mapped_column(String(200), comment="key", default="", primary_key=True)
-    value = mapped_column(Text, comment="value", default="")
+    key: Mapped[str] = mapped_column(
+        String(200), comment="key", default="", primary_key=True
+    )
+    value: Mapped[str] = mapped_column(Text, comment="value", default="")
 
-    expire_time = mapped_column(BIGINT, comment="过期时间", default=9999999999)
+    expire_time: Mapped[int] = mapped_column(
+        BIGINT, comment="过期时间", default=9999999999
+    )
 
     @cache
-    def exists(self, session: Session):
+    def exists(self, session: Session) -> bool:
+        """判断当前键是否已经存在。"""
         return (
             session.execute(
                 select(SecretTable).where(SecretTable.key == self.key)
@@ -78,13 +89,18 @@ class SecretTable(Base):
             is not None
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, str | int]:
+        """返回可写入数据库的字段。"""
         return {"key": self.key, "value": self.value, "expire_time": self.expire_time}
 
     def upsert(
-        self, session: Session, update_data=True, commit=True, existing_keys=None
-    ):
-        logger.debug(f"upsert:{self.to_dict()}")
+        self,
+        session: Session,
+        update_data: bool = True,
+        commit: bool = True,
+        existing_keys: set[str] | None = None,
+    ) -> None:
+        """按键新增或更新记录。"""
         key_exists = (
             self.key in existing_keys
             if existing_keys is not None
@@ -104,7 +120,8 @@ class SecretTable(Base):
             session.commit()
 
     @staticmethod
-    def delete_all(engine: Engine):
+    def delete_all(engine: Engine) -> None:
+        """删除指定数据库中的全部密钥。"""
         logger.warning(f"delete_all:{SecretTable.__tablename__}")
         with Session(engine) as session:
             session.execute(delete(SecretTable))
@@ -112,14 +129,16 @@ class SecretTable(Base):
 
 
 class SecretManage:
+    """管理本地或远端数据库中的加密密钥。"""
+
     def __init__(
         self,
-        secret_dir: str = None,
-        url: str = None,
-        cipher_key: str = None,
-        *args,
-        **kwargs,
-    ):
+        secret_dir: str | None = None,
+        url: str | None = None,
+        cipher_key: str | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         secret_dir = get_secret_path(secret_dir)
         secret_url = get_secret_url(url)
 
@@ -136,43 +155,43 @@ class SecretManage:
             self.cipher_key = base64.urlsafe_b64encode(
                 quote_plus(secret_dir * 2)[:32].encode("utf-8")
             ).decode()
-        logger.debug(f"cipher_key: {self.cipher_key}")
         Base.metadata.create_all(self.engine)
 
     @staticmethod
     def convert_key(
-        cate1: str, cate2: str, cate3: str = None, cate4: str = None, cate5: str = None
+        cate1: str,
+        cate2: str,
+        cate3: str | None = None,
+        cate4: str | None = None,
+        cate5: str | None = None,
     ) -> str:
+        """把最多五级分类转换为数据库键。"""
         return f"{cate1}--{cate2}--{cate3}--{cate4}--{cate5}"
 
     def encrypt(self, text: str, secret: bool = True) -> str:
-        """
-        加密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
-        :param text: 需要加密的文本
-        :param secret:是否加密
-        :return: 加密后的文本
-        """
+        """按配置加密文本；关闭加密时原样返回。"""
         if secret and self.cipher_key:
-            return encrypt(text, self.cipher_key)
+            encrypted = encrypt(text, self.cipher_key)
+            assert encrypted is not None
+            return encrypted
         return text
 
     def decrypt(self, encrypted_text: str, secret: bool = True) -> str:
-        """
-        解密，我也没测试过，不知道能不能正常使用，纯字母的应该没问题，中文的待商榷
-        :param encrypted_text: 需要解密的文本
-        :param secret:是否加密
-        :return:解密后的文本
-        """
+        """按配置解密文本；关闭解密时原样返回。"""
         if secret and self.cipher_key:
-            return decrypt(encrypted_text, self.cipher_key)
+            decrypted = decrypt(encrypted_text, self.cipher_key)
+            assert decrypted is not None
+            return decrypted
         return encrypted_text
 
-    def scalars(self) -> List[SecretTable]:
+    def scalars(self) -> list[SecretTable]:
+        """返回数据库中的全部密钥记录。"""
         with Session(self.engine) as session:
             return [data for data in session.execute(select(SecretTable)).scalars()]
 
-    def list_secret(self, secret=True):
-        result = {}
+    def list_secret(self, secret: bool = True) -> SecretTree:
+        """返回按分类嵌套的密钥树，并清理过期记录。"""
+        result: SecretTree = {}
 
         with Session(self.engine) as session:
             session.execute(
@@ -197,17 +216,16 @@ class SecretManage:
         return result
 
     def read_key(
-        self, key, value=None, save=True, secret=True, expire_time=None, *args, **kwargs
-    ) -> str:
-        """
-        按照分类读取保存的key，如果为空或者已过期，则返回None
-        :param key: cate1
-        :param value: 保存的数据
-        :param save: 是否需要保存，保存的话，会覆盖当前保存的数据
-        :param secret: 是否需要加密，如果加密的话，构造类的时候，cipher_key不能为空，这是加密解密的秘钥
-        :param expire_time: 过期时间，unix时间戳，如果小于10000000的话，会当做保存数据的持续时间，加上当前的Unix时间戳作为过期时间
-        :return: 保存的数据
-        """
+        self,
+        key: str,
+        value: str | None = None,
+        save: bool = True,
+        secret: bool = True,
+        expire_time: int | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str | None:
+        """读取键；传入 value 时先写入，过期或不存在时返回 ``None``。"""
         if expire_time is not None and expire_time < 1000000000:
             expire_time += int(time.time())
         if save:
@@ -234,14 +252,16 @@ class SecretManage:
                     return value
         return None
 
-    def write_key(self, key, value, secret=True, expire_time=None, *args, **kwargs):
-        """
-        对数据进行保存
-        :param value: 保存的数据
-        :param key:key
-        :param secret: 是否需要加密
-        :param expire_time:过期时间，默认不过期
-        """
+    def write_key(
+        self,
+        key: str,
+        value: str | None,
+        secret: bool = True,
+        expire_time: int | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """写入键值；短过期时间按相对秒数处理。"""
         if value is None:
             return
         expire_time = expire_time or 999999999
@@ -256,50 +276,56 @@ class SecretManage:
             ).upsert(session)
 
     def read(
-        self, cate1, cate2, cate3="", cate4="", cate5="", value=None, *args, **kwargs
-    ) -> str:
-        """
-        按照分类读取保存的key，如果为空或者已过期，则返回None
-        :param cate1: cate1
-        :param cate2: cate2
-        :param cate3: cate3
-        :param cate4: cate4
-        :param cate5: cate5
-        :param value: 保存的数据
-
-        :return: 保存的数据
-        """
+        self,
+        cate1: str,
+        cate2: str,
+        cate3: str = "",
+        cate4: str = "",
+        cate5: str = "",
+        value: str | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str | None:
+        """按分类路径读取密钥；传入 value 时先写入。"""
         key = self.convert_key(cate1, cate2, cate3, cate4, cate5)
-        return self.read_key(key, value=value, *args, **kwargs)
+        return self.read_key(key, value=value, **kwargs)
 
     def write(
-        self, value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **kwargs
-    ):
-        """
-        对数据进行保存
-        :param value: 保存的数据
-        :param cate1:cate1
-        :param cate2:cate2
-        :param cate3:cate3
-        :param cate4:cate4
-        :param cate5:cate5
-        """
+        self,
+        value: str,
+        cate1: str,
+        cate2: str = "",
+        cate3: str = "",
+        cate4: str = "",
+        cate5: str = "",
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """按分类路径写入密钥。"""
         self.write_key(
             key=self.convert_key(cate1, cate2, cate3, cate4, cate5),
             value=value,
-            *args,
             **kwargs,
         )
 
 
 @cache
-def cache_manage():
+def cache_manage() -> SecretManage:
+    """返回默认的密钥管理实例。"""
     return SecretManage()
 
 
 def read_secret(
-    cate1, cate2, cate3="", cate4="", cate5="", value=None, *args, **kwargs
-) -> str:
+    cate1: str,
+    cate2: str,
+    cate3: str = "",
+    cate4: str = "",
+    cate5: str = "",
+    value: str | None = None,
+    *args: Any,
+    **kwargs: Any,
+) -> str | None:
+    """从默认数据库读取密钥；传入 value 时先写入。"""
     value = cache_manage().read(
         cate1=cate1,
         cate2=cate2,
@@ -307,7 +333,6 @@ def read_secret(
         cate4=cate4,
         cate5=cate5,
         value=value,
-        *args,
         **kwargs,
     )
     if value is None:
@@ -315,7 +340,17 @@ def read_secret(
     return value
 
 
-def write_secret(value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **kwargs):
+def write_secret(
+    value: str,
+    cate1: str,
+    cate2: str = "",
+    cate3: str = "",
+    cate4: str = "",
+    cate5: str = "",
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """向默认数据库写入密钥。"""
     cache_manage().write(
         value=value,
         cate1=cate1,
@@ -323,53 +358,55 @@ def write_secret(value, cate1, cate2="", cate3="", cate4="", cate5="", *args, **
         cate3=cate3,
         cate4=cate4,
         cate5=cate5,
-        *args,
         **kwargs,
     )
 
 
-def list_sectet(secret=True):
+def list_sectet(secret: bool = True) -> SecretTree:
+    """返回默认数据库中的密钥树。"""
     return cache_manage().list_secret(secret=secret)
 
 
-def _syc_secret_db(manage1, manage2, source_secret=True, target_secret=True):
+def _syc_secret_db(
+    manage1: SecretManage,
+    manage2: SecretManage,
+    source_secret: bool = True,
+    target_secret: bool = True,
+) -> None:
     with Session(manage2.engine) as session:
         existing_keys = {
             row[0] for row in session.execute(select(SecretTable.key)).all()
         }
         pbar = tqdm(manage1.scalars())
-        success = 0
-        for entity in pbar:
-            try:
-                entity.key = manage2.encrypt(
-                    manage1.decrypt(entity.key, secret=source_secret),
-                    secret=target_secret,
-                )
-                entity.value = manage2.encrypt(
-                    manage1.decrypt(entity.value, secret=source_secret),
-                    secret=target_secret,
-                )
-                entity.upsert(session, commit=False, existing_keys=existing_keys)
-                success += 1
-                pbar.set_description(f"success: {success}")
-            except Exception as e:
-                logger.error(e)
-                session.rollback()
+        for success, entity in enumerate(pbar, start=1):
+            entity.key = manage2.encrypt(
+                manage1.decrypt(entity.key, secret=source_secret),
+                secret=target_secret,
+            )
+            entity.value = manage2.encrypt(
+                manage1.decrypt(entity.value, secret=source_secret),
+                secret=target_secret,
+            )
+            entity.upsert(session, commit=False, existing_keys=existing_keys)
+            pbar.set_description(f"success: {success}")
         session.commit()
 
 
-def load_secret_db(url=None, cipher_key=None):
+def load_secret_db(url: str | None = None, cipher_key: str | None = None) -> None:
+    """从指定数据库加载密钥到默认数据库。"""
     manage1 = SecretManage(url=url, cipher_key=cipher_key)
     manage2 = cache_manage()
     _syc_secret_db(manage1, manage2, source_secret=cipher_key is not None)
 
 
-def save_secret_db(url=None, cipher_key=None):
+def save_secret_db(url: str | None = None, cipher_key: str | None = None) -> None:
+    """把默认数据库中的密钥保存到指定数据库。"""
     manage1 = SecretManage(url=url, cipher_key=cipher_key)
     manage2 = cache_manage()
     _syc_secret_db(manage2, manage1, target_secret=cipher_key is not None)
 
 
-def clear_secret_db(url=None, cipher_key=None):
+def clear_secret_db(url: str | None = None, cipher_key: str | None = None) -> None:
+    """清空指定数据库；未指定时清空默认数据库。"""
     manage = SecretManage(url=url, cipher_key=cipher_key)
     SecretTable.delete_all(manage.engine)
