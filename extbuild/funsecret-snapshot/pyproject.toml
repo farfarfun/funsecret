@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "funsecret-snapshot"
 version = "1.4.97"
-description = "funsecret"
+description = "Cloud snapshot backup and restore extension for funsecret"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

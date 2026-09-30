@@ -239,7 +239,9 @@ class SecretManage:
             )
             session.commit()
 
-            sql = select(SecretTable).where(SecretTable.key == self.encrypt(key))
+            sql = select(SecretTable).where(
+                SecretTable.key == self.encrypt(key, secret=secret)
+            )
             datas = session.execute(sql).scalar()
             if datas is not None:
                 value, expire_time = datas.value, datas.expire_time

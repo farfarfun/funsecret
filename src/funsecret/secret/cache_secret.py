@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import os
+from functools import cache
 from urllib.parse import quote_plus
 
 from diskcache import Cache
@@ -118,7 +119,10 @@ class CacheSecretManage:
         self.cache.set(cache_key, cache_value, expire=expire_time)
 
 
-manage = CacheSecretManage()
+@cache
+def cache_manage() -> CacheSecretManage:
+    """首次使用缓存密钥 API 时创建默认管理器。"""
+    return CacheSecretManage()
 
 
 def read_cache_secret(
@@ -133,7 +137,7 @@ def read_cache_secret(
     expire_time: float | None = None,
 ) -> str | None:
     """从默认缓存读取密钥；传入 value 时先写入。"""
-    value = manage.read(
+    value = cache_manage().read(
         cate1=cate1,
         cate2=cate2,
         cate3=cate3,
@@ -158,7 +162,7 @@ def write_cache_secret(
     expire_time: float | None = None,
 ) -> None:
     """向默认缓存写入密钥。"""
-    manage.write(
+    cache_manage().write(
         value=value,
         cate1=cate1,
         cate2=cate2,
@@ -173,10 +177,10 @@ def write_cache_secret(
 def load_os_environ() -> None:
     """把当前环境变量写入默认缓存。"""
     for k, v in os.environ.items():
-        manage.read(cate1="os", cate2="environ", cate3=k, value=v)
+        cache_manage().read(cate1="os", cate2="environ", cate3=k, value=v)
 
 
 def save_os_environ() -> None:
     """把当前环境变量保存到默认缓存。"""
     for k, v in os.environ.items():
-        manage.read(cate1="os", cate2="environ", cate3=k, value=v)
+        cache_manage().read(cate1="os", cate2="environ", cate3=k, value=v)

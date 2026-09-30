@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "funsecret"
 version = "1.4.97"
-description = "funsecret"
+description = "Local-first encrypted secret manager with SQLite and database sync"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
