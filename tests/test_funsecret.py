@@ -1,4 +1,5 @@
 import os
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +42,26 @@ def test_database_path(manage: SecretManage, tmp_path: Path) -> None:
     assert manage.engine.url.database == str(tmp_path / ".funsecret.db")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="文件权限位语义仅在 POSIX 系统上适用")
+def test_database_file_and_dir_are_owner_only(tmp_path: Path) -> None:
+    secret_dir = tmp_path / "owner-only"
+    manage = SecretManage(secret_dir=str(secret_dir))
+    db_path = Path(manage.engine.url.database)
+
+    assert stat.S_IMODE(secret_dir.stat().st_mode) == 0o700
+    assert stat.S_IMODE(db_path.stat().st_mode) == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="文件权限位语义仅在 POSIX 系统上适用")
+def test_cache_secret_dir_is_owner_only(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "owner-only-cache"
+    manager = CacheSecretManage(secret_dir=str(cache_dir), cipher_key=generate_key())
+    try:
+        assert stat.S_IMODE(cache_dir.stat().st_mode) == 0o700
+    finally:
+        manager.cache.close()
+
+
 def test_import_does_not_create_cache_directory(tmp_path: Path) -> None:
     cache_path = tmp_path / "cache"
     env = os.environ.copy()
@@ -79,12 +100,11 @@ def test_cache_secret_manager_and_default_functions(tmp_path: Path) -> None:
         manager.cache.close()
 
 
-@pytest.mark.parametrize("function_name", ["load_os_environ", "save_os_environ"])
-def test_cache_environment_functions(tmp_path: Path, function_name: str) -> None:
+def test_save_os_environ_writes_current_values_to_cache(tmp_path: Path) -> None:
     from funsecret.secret import cache_secret
 
     manager = CacheSecretManage(
-        secret_dir=str(tmp_path / function_name), cipher_key=generate_key()
+        secret_dir=str(tmp_path / "save"), cipher_key=generate_key()
     )
     try:
         with (
@@ -93,8 +113,31 @@ def test_cache_environment_functions(tmp_path: Path, function_name: str) -> None
                 cache_secret.os.environ, {"FUNSECRET_TEST_VALUE": "saved"}, clear=True
             ),
         ):
-            getattr(cache_secret, function_name)()
+            cache_secret.save_os_environ()
         assert manager.read("os", "environ", "FUNSECRET_TEST_VALUE") == "saved"
+    finally:
+        manager.cache.close()
+
+
+def test_load_os_environ_restores_values_from_cache(tmp_path: Path) -> None:
+    """load_os_environ 应把缓存里的历史值写回当前环境变量，而不是重新覆盖缓存。"""
+    from funsecret.secret import cache_secret
+
+    manager = CacheSecretManage(
+        secret_dir=str(tmp_path / "load"), cipher_key=generate_key()
+    )
+    try:
+        manager.write("os", "environ", "FUNSECRET_TEST_VALUE", value="cached")
+        with (
+            patch.object(cache_secret, "cache_manage", return_value=manager),
+            patch.dict(
+                cache_secret.os.environ,
+                {"FUNSECRET_TEST_VALUE": "stale"},
+                clear=True,
+            ),
+        ):
+            cache_secret.load_os_environ()
+            assert cache_secret.os.environ["FUNSECRET_TEST_VALUE"] == "cached"
     finally:
         manager.cache.close()
 

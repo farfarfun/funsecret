@@ -48,13 +48,13 @@ def get_secret_url(secret_url: str | None = None) -> str | None:
 
 
 def get_secret_path(secret_dir: str | None = None) -> str:
-    """返回本地密钥目录，并在缺失时创建。"""
+    """返回本地密钥目录，并在缺失时创建（仅当前用户可读写执行）。"""
     secret_dir = secret_dir or "~/.secret"
     secret_dir = secret_dir.replace(
         "~", os.environ.get("FUN_SECRET_PATH", os.environ["HOME"])
     )
     if not os.path.exists(secret_dir):
-        os.makedirs(secret_dir)
+        os.makedirs(secret_dir, mode=0o700)
     return secret_dir
 
 
@@ -142,12 +142,12 @@ class SecretManage:
         secret_dir = get_secret_path(secret_dir)
         secret_url = get_secret_url(url)
 
+        sqlite_path: str | None = None
         if secret_url is not None:
             self.engine = create_engine(secret_url)
         else:
-            self.engine = create_engine(
-                f"sqlite:///{os.path.join(secret_dir, '.funsecret.db')}"
-            )
+            sqlite_path = os.path.join(secret_dir, ".funsecret.db")
+            self.engine = create_engine(f"sqlite:///{sqlite_path}")
 
         if cipher_key:
             self.cipher_key = cipher_key
@@ -156,6 +156,9 @@ class SecretManage:
                 quote_plus(secret_dir * 2)[:32].encode("utf-8")
             ).decode()
         Base.metadata.create_all(self.engine)
+        if sqlite_path is not None and os.path.exists(sqlite_path):
+            # 本地密钥数据库可能含明文/密文密钥，落盘权限收紧为仅当前用户可读写。
+            os.chmod(sqlite_path, 0o600)
 
     @staticmethod
     def convert_key(

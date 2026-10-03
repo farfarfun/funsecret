@@ -26,6 +26,9 @@ class CacheSecretManage:
             secret_dir = os.environ.get("FUN_CACHE_SECRET_PATH")
         if secret_dir is None:
             secret_dir = f"{os.environ.get('FUN_CACHE_SECRET_HOME') or os.environ['HOME']}/.secret/cache"
+        if not os.path.exists(secret_dir):
+            # 预先创建为仅当前用户可读写执行，避免 diskcache 用默认权限(受 umask 影响)建目录。
+            os.makedirs(secret_dir, mode=0o700)
         self.cache = Cache(directory=secret_dir)
         self.cipher_key = (
             cipher_key
@@ -175,9 +178,11 @@ def write_cache_secret(
 
 
 def load_os_environ() -> None:
-    """把当前环境变量写入默认缓存。"""
-    for k, v in os.environ.items():
-        cache_manage().read(cate1="os", cate2="environ", cate3=k, value=v)
+    """用默认缓存中保存的值刷新当前进程里同名的环境变量。"""
+    for k in list(os.environ.keys()):
+        value = cache_manage().read(cate1="os", cate2="environ", cate3=k, save=False)
+        if value is not None:
+            os.environ[k] = value
 
 
 def save_os_environ() -> None:
