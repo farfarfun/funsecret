@@ -215,25 +215,36 @@ read_secret("app", "prod", "mysql", "password", value="my-password")
 快照功能需要单独安装：
 
 ```bash
-pip install funsecret-snapshot
+pip install "funsecret-snapshot" "fundrive[dropbox]"
 ```
 
-保存快照：
+设置 Dropbox access token：
+
+```bash
+export DROPBOX_ACCESS_TOKEN="your-dropbox-access-token"
+```
+
+保存或读取快照：
 
 ```python
-from funsecret.snapshot import save_snapshot
+import os
 
-# drive 是已配置好的 fundrive BaseDrive 实例
-save_snapshot(table_fid="your-table-file-id", drive=drive)
+from fundrive.drives.dropbox import DropboxDrive
+from funsecret.snapshot import load_snapshot, save_snapshot
+
+drive = DropboxDrive()
+if not drive.login(access_token=os.environ["DROPBOX_ACCESS_TOKEN"]):
+    raise RuntimeError("Dropbox login failed")
+
+table_fid = "/funsecret-snapshots"
+if not drive.exist(table_fid):
+    drive.mkdir("", "funsecret-snapshots")
+
+save_snapshot(table_fid=table_fid, drive=drive)
+load_snapshot(table_fid=table_fid, drive=drive)
 ```
 
-读取快照：
-
-```python
-from funsecret.snapshot import load_snapshot
-
-load_snapshot(table_fid="your-table-file-id", drive=drive)
-```
+`table_fid` 是保存快照的云盘目录 ID；其他 `fundrive` 驱动也可替换 `DropboxDrive`，具体认证方式参见 [fundrive 文档](https://github.com/farfarfun/fundrive)。
 
 ---
 
