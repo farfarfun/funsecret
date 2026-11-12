@@ -7,7 +7,7 @@ name = "funsecret"
 version = "1.4.100"
 description = "Local-first encrypted secret manager with SQLite and database sync"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3,<6", "farcache>=2.0.3", "farlog>=1.1.7", "sqlalchemy>=2.0.35", "tqdm>=4.67.0", "typer>=0.12.5",]
