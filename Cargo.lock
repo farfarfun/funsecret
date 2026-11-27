@@ -557,7 +557,7 @@ dependencies = [
 
 [[package]]
 name = "funsecret"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "clap",
  "env_logger",
@@ -597,8 +597,9 @@ dependencies = [
 
 [[package]]
 name = "funsecret-py"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
+ "funsecret",
  "funsecret-core",
  "pyo3",
  "pyo3-log",

@@ -16,19 +16,19 @@
 
 ## 安装
 
-### 原生命令行（推荐，零 Python 依赖）
+### 通过 pip / uv 安装（同时包含 Python API 与 Rust 驱动的 `funsecret` 命令）
+
+```bash
+pip install -U funsecret
+```
+
+### 独立原生命令行（零 Python 环境依赖）
 
 ```bash
 # Cargo
 cargo install funsecret
 
 # 或从 GitHub Releases 下载对应平台的静态二进制 / .deb
-```
-
-### Python 库（仅提供 Python API，不含命令行入口）
-
-```bash
-pip install funsecret
 ```
 
 本地源码开发：

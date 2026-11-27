@@ -13,6 +13,7 @@ name = "_funsecret"
 crate-type = ["cdylib"]
 
 [dependencies]
+funsecret = { path = "../funsecret" }
 funsecret-core.workspace = true
 pyo3 = { version = "0.29", features = ["extension-module"] }
 pyo3-log = "0.13"

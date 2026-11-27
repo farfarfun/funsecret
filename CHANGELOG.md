@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+### 新增
+
+- **`pip install funsecret` 重新提供 `funsecret` 命令行入口**：通过 PyO3 复用 Rust 原生 `funsecret::run`，旧版 Python 用户执行 `pip install -U funsecret` 即可无感升级到 Rust 版命令行（同时继续保留 `cargo install` / `apt` / `brew` / GitHub Release 独立静态二进制渠道，两者同源同版本）。
+
 ## 2.0.0（funsecret-core 0.1.0）
 
 ### 破坏性变更
