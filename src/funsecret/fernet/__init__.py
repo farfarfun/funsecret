@@ -1,4 +1,5 @@
-from .fernet import (
+from .._funsecret import (
+    InvalidToken,
     decrypt,
     encrypt,
     file_decrypt,
@@ -9,6 +10,7 @@ from .fernet import (
 )
 
 __all__ = [
+    "InvalidToken",
     "decrypt",
     "encrypt",
     "file_decrypt",

@@ -1,27 +1,28 @@
+import base64
+import json
 import os
 import stat
 import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import patch
+from urllib.parse import quote_plus
 
 import pytest
-from cryptography.fernet import InvalidToken
-from sqlalchemy.engine import make_url
-from typer.testing import CliRunner
 
 from funsecret import (
     CacheSecretManage,
+    InvalidToken,
     SecretManage,
     clear_secret_db,
     decrypt,
+    delete_secret,
     encrypt,
     file_decrypt,
     file_encrypt,
     generate_key,
     get_md5_file,
     get_md5_str,
+    list_secret,
     list_sectet,
     load_secret_db,
     read_cache_secret,
@@ -30,7 +31,36 @@ from funsecret import (
     write_cache_secret,
     write_secret,
 )
-from funsecret.cli import app
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _cli_binary() -> Path:
+    exe_name = "funsecret.exe" if os.name == "nt" else "funsecret"
+    target_roots: list[Path] = []
+    if env_target := os.environ.get("CARGO_TARGET_DIR"):
+        target_roots.append(Path(env_target))
+    target_roots.append(REPO_ROOT / "target")
+    try:
+        meta = subprocess.run(
+            ["cargo", "metadata", "--no-deps", "--format-version", "1"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+        target_dir = Path(json.loads(meta.stdout)["target_directory"])
+        if target_dir not in target_roots:
+            target_roots.insert(0, target_dir)
+    except Exception:
+        pass
+    for root in target_roots:
+        for profile in ("release", "debug"):
+            candidate = root / profile / exe_name
+            if candidate.is_file():
+                return candidate
+    pytest.skip("funsecret Rust CLI binary not built yet")
 
 
 @pytest.fixture
@@ -39,14 +69,15 @@ def manage(tmp_path: Path) -> SecretManage:
 
 
 def test_database_path(manage: SecretManage, tmp_path: Path) -> None:
-    assert manage.engine.url.database == str(tmp_path / ".funsecret.db")
+    assert manage.database_file == str(tmp_path / ".funsecret.db")
 
 
 @pytest.mark.skipif(os.name != "posix", reason="文件权限位语义仅在 POSIX 系统上适用")
 def test_database_file_and_dir_are_owner_only(tmp_path: Path) -> None:
     secret_dir = tmp_path / "owner-only"
     manage = SecretManage(secret_dir=str(secret_dir))
-    db_path = Path(manage.engine.url.database)
+    assert manage.database_file is not None
+    db_path = Path(manage.database_file)
 
     assert stat.S_IMODE(secret_dir.stat().st_mode) == 0o700
     assert stat.S_IMODE(db_path.stat().st_mode) == 0o600
@@ -55,11 +86,8 @@ def test_database_file_and_dir_are_owner_only(tmp_path: Path) -> None:
 @pytest.mark.skipif(os.name != "posix", reason="文件权限位语义仅在 POSIX 系统上适用")
 def test_cache_secret_dir_is_owner_only(tmp_path: Path) -> None:
     cache_dir = tmp_path / "owner-only-cache"
-    manager = CacheSecretManage(secret_dir=str(cache_dir), cipher_key=generate_key())
-    try:
-        assert stat.S_IMODE(cache_dir.stat().st_mode) == 0o700
-    finally:
-        manager.cache.close()
+    _manager = CacheSecretManage(secret_dir=str(cache_dir), cipher_key=generate_key())
+    assert stat.S_IMODE(cache_dir.stat().st_mode) == 0o700
 
 
 def test_import_does_not_create_cache_directory(tmp_path: Path) -> None:
@@ -80,69 +108,38 @@ def test_import_does_not_create_cache_directory(tmp_path: Path) -> None:
     assert not cache_path.exists()
 
 
-def test_cache_secret_manager_and_default_functions(tmp_path: Path) -> None:
-    from funsecret.secret import cache_secret
-
+def test_cache_secret_manager_and_default_functions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FUN_CACHE_SECRET_PATH", str(tmp_path / "default-cache"))
     manager = CacheSecretManage(
         secret_dir=str(tmp_path / "cache"), cipher_key=generate_key()
     )
-    try:
-        manager.write("app", "prod", value="encrypted")
-        manager.write("app", "plain", value="visible", secret=False)
-        assert manager.read("app", "prod") == "encrypted"
-        assert manager.read("app", "plain", secret=False) == "visible"
-        assert manager.read("missing", "value") is None
+    manager.write("app", "prod", value="encrypted")
+    manager.write("app", "plain", value="visible", secret=False)
+    assert manager.read("app", "prod") == "encrypted"
+    assert manager.read("app", "plain", secret=False) == "visible"
+    assert manager.read("missing", "value") is None
 
-        with patch.object(cache_secret, "cache_manage", return_value=manager):
-            write_cache_secret("wrapper", "app", "wrapper")
-            assert read_cache_secret("app", "wrapper") == "wrapper"
-    finally:
-        manager.cache.close()
+    write_cache_secret("wrapper", "app", "wrapper")
+    assert read_cache_secret("app", "wrapper") == "wrapper"
 
 
-def test_save_os_environ_writes_current_values_to_cache(tmp_path: Path) -> None:
+def test_save_and_load_os_environ(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from funsecret.secret import cache_secret
 
-    manager = CacheSecretManage(
-        secret_dir=str(tmp_path / "save"), cipher_key=generate_key()
-    )
-    try:
-        with (
-            patch.object(cache_secret, "cache_manage", return_value=manager),
-            patch.dict(
-                cache_secret.os.environ, {"FUNSECRET_TEST_VALUE": "saved"}, clear=True
-            ),
-        ):
-            cache_secret.save_os_environ()
-        assert manager.read("os", "environ", "FUNSECRET_TEST_VALUE") == "saved"
-    finally:
-        manager.cache.close()
+    monkeypatch.setenv("FUN_CACHE_SECRET_PATH", str(tmp_path / "env-cache"))
+    monkeypatch.setenv("FUNSECRET_TEST_VALUE", "saved")
+    cache_secret.save_os_environ()
+
+    monkeypatch.setenv("FUNSECRET_TEST_VALUE", "stale")
+    cache_secret.load_os_environ()
+    assert os.environ["FUNSECRET_TEST_VALUE"] == "saved"
 
 
-def test_load_os_environ_restores_values_from_cache(tmp_path: Path) -> None:
-    """load_os_environ 应把缓存里的历史值写回当前环境变量，而不是重新覆盖缓存。"""
-    from funsecret.secret import cache_secret
-
-    manager = CacheSecretManage(
-        secret_dir=str(tmp_path / "load"), cipher_key=generate_key()
-    )
-    try:
-        manager.write("os", "environ", "FUNSECRET_TEST_VALUE", value="cached")
-        with (
-            patch.object(cache_secret, "cache_manage", return_value=manager),
-            patch.dict(
-                cache_secret.os.environ,
-                {"FUNSECRET_TEST_VALUE": "stale"},
-                clear=True,
-            ),
-        ):
-            cache_secret.load_os_environ()
-            assert cache_secret.os.environ["FUNSECRET_TEST_VALUE"] == "cached"
-    finally:
-        manager.cache.close()
-
-
-def test_read_write_list_and_expiry(manage: SecretManage) -> None:
+def test_read_write_delete_list_and_expiry(manage: SecretManage) -> None:
     manage.write("中文-secret", "app", "prod", "token")
 
     assert manage.read("app", "prod", "token") == "中文-secret"
@@ -151,47 +148,46 @@ def test_read_write_list_and_expiry(manage: SecretManage) -> None:
     manage.write_key("expired", "value", expire_time=-1)
     assert manage.read_key("expired", save=False) is None
 
-
-def test_default_database_functions(manage: SecretManage) -> None:
-    import funsecret.secret.secret as secret_module
-
-    with patch.object(secret_module, "cache_manage", return_value=manage):
-        write_secret("value", "app", "prod")
-        assert read_secret("app", "prod") == "value"
-        assert list_sectet() == {"app": {"prod": "value"}}
+    assert manage.delete("app", "prod", "token") is True
+    assert manage.delete("app", "prod", "token") is False
+    assert manage.read("app", "prod", "token") is None
 
 
-def test_database_save_load_and_clear(tmp_path: Path, monkeypatch) -> None:
-    import funsecret.secret.secret as secret_module
+def test_default_database_functions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FUN_SECRET_PATH", str(tmp_path))
+    monkeypatch.delenv("FUN_SECRET_URL", raising=False)
 
-    monkeypatch.setenv("FUN_SECRET_PATH", str(tmp_path / "home"))
-    default = SecretManage(secret_dir=str(tmp_path / "default"))
-    default.write("source-value", "app", "prod")
+    write_secret("value", "app", "prod")
+    assert read_secret("app", "prod") == "value"
+    assert list_secret() == {"app": {"prod": "value"}}
+    assert list_sectet() == {"app": {"prod": "value"}}
+    assert delete_secret("app", "prod") is True
+    assert read_secret("app", "prod") is None
+
+
+def test_database_save_load_and_clear(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("FUN_SECRET_URL", raising=False)
+    default_home = tmp_path / "home"
+    restored_home = tmp_path / "restored-home"
     backup_url = f"sqlite:///{tmp_path / 'backup.db'}"
 
-    with patch.object(secret_module, "cache_manage", return_value=default):
-        save_secret_db(url=backup_url)
+    monkeypatch.setenv("FUN_SECRET_PATH", str(default_home))
+    write_secret("source-value", "app", "prod")
+    save_secret_db(url=backup_url)
 
     backup = SecretManage(url=backup_url, secret_dir=str(tmp_path / "backup-key"))
     assert backup.read("app", "prod", secret=False, save=False) == "source-value"
 
-    restored = SecretManage(secret_dir=str(tmp_path / "restored"))
-    with patch.object(secret_module, "cache_manage", return_value=restored):
-        load_secret_db(url=backup_url)
-    assert restored.read("app", "prod", save=False) == "source-value"
+    monkeypatch.setenv("FUN_SECRET_PATH", str(restored_home))
+    load_secret_db(url=backup_url)
+    assert read_secret("app", "prod", save=False) == "source-value"
 
     clear_secret_db(url=backup_url)
-    assert SecretManage(url=backup_url).scalars() == []
-
-
-def test_write_never_logs_secret_value_or_cipher_key(tmp_path: Path) -> None:
-    with patch("funsecret.secret.secret.logger.debug") as debug:
-        manage = SecretManage(secret_dir=str(tmp_path))
-        manage.write("super-secret-value", "app", "prod")
-
-    messages = " ".join(str(call) for call in debug.call_args_list)
-    assert "super-secret-value" not in messages
-    assert manage.cipher_key not in messages
+    assert backup.list_entries(secret=False) == []
 
 
 def test_text_encryption_and_invalid_token() -> None:
@@ -202,6 +198,29 @@ def test_text_encryption_and_invalid_token() -> None:
     assert decrypt(encrypted, key) == "中文-secret"
     with pytest.raises(InvalidToken):
         decrypt("not-a-token", key)
+
+
+def test_fernet_differential_compatibility_with_python_cryptography(
+    tmp_path: Path,
+) -> None:
+    """确认 Rust 确定性 Fernet 与历史 Python cryptography.fernet 逐字节一致。"""
+    fernet_mod = pytest.importorskip("cryptography.fernet")
+    key = generate_key()
+    py_fernet = fernet_mod.Fernet(key.encode())
+    py_token = py_fernet._encrypt_from_parts(
+        "中文-secret-兼容测试".encode(), 1024, b"123456789abcdefg"
+    ).decode()
+    rs_token = encrypt("中文-secret-兼容测试", key)
+
+    assert rs_token == py_token
+    assert decrypt(py_token, key) == "中文-secret-兼容测试"
+
+    # 默认目录派生密钥必须与历史 Python 公式完全一致
+    manage = SecretManage(secret_dir=str(tmp_path / "compat"))
+    expected_key = base64.urlsafe_b64encode(
+        quote_plus(str(tmp_path / "compat") * 2)[:32].encode("utf-8")
+    ).decode()
+    assert manage.cipher_key == expected_key
 
 
 def test_file_encryption_round_trip(tmp_path: Path) -> None:
@@ -232,52 +251,66 @@ def test_md5_helpers(tmp_path: Path) -> None:
     assert get_md5_file(source, chunk=2) == get_md5_str("hello")
 
 
-def test_cli_write_and_read() -> None:
-    runner = CliRunner()
-    with patch("funsecret.cli.write_secret") as write_secret:
-        result = runner.invoke(app, ["write", "value", "app", "prod"])
-    assert result.exit_code == 0
-    write_secret.assert_called_once_with("value", "app", "prod", "", "", "")
+def test_rust_cli_end_to_end(tmp_path: Path) -> None:
+    bin_path = _cli_binary()
+    env = os.environ.copy()
+    env["FUN_SECRET_PATH"] = str(tmp_path)
+    env.pop("FUN_SECRET_URL", None)
 
-    with patch("funsecret.cli.read_secret", return_value="value"):
-        result = runner.invoke(app, ["read", "app", "prod"])
-    assert result.exit_code == 0
-    assert result.stdout.strip() == "value"
+    def run_cli(*args: str, stdin_text: str | None = None) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(bin_path), *args],
+            input=stdin_text,
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+            timeout=15,
+        )
 
+    # 通过 --stdin 写入含连字符开头与多行的密钥值
+    secret_val = "-starts-with-dash\nline2"
+    res = run_cli("write", "--stdin", "--json", "openai", "prod", "api_key", stdin_text=secret_val)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout)["written"] is True
 
-def test_cli_list_never_prints_values() -> None:
-    with patch(
-        "funsecret.cli.list_sectet", return_value={"app": {"prod": "secret-value"}}
-    ):
-        result = CliRunner().invoke(app, ["list"])
+    # list 不得泄露密钥值
+    res = run_cli("list")
+    assert res.returncode == 0
+    assert res.stdout.strip() == "openai prod api_key"
+    assert secret_val not in res.stdout
 
-    assert result.exit_code == 0
-    assert result.stdout.strip() == "app prod"
-    assert "secret-value" not in result.stdout
+    # list --json 返回元数据且不含 value
+    res = run_cli("list", "--json")
+    assert res.returncode == 0
+    entries = json.loads(res.stdout)
+    assert len(entries) == 1
+    assert entries[0]["path"] == ["openai", "prod", "api_key"]
+    assert "value" not in entries[0]
 
+    # read --json 无损读取多行值
+    res = run_cli("read", "--json", "openai", "prod", "api_key")
+    assert res.returncode == 0
+    assert json.loads(res.stdout)["value"] == secret_val
 
-def test_cli_info_hides_database_password() -> None:
-    engine = SimpleNamespace(
-        url=make_url("mysql+pymysql://user:secret-password@localhost/funsecret")
-    )
-    manager = SimpleNamespace(engine=engine, cipher_key="configured")
-    with (
-        patch("funsecret.cli.SecretManage", return_value=manager),
-        patch("funsecret.cli.list_sectet", return_value={}),
-    ):
-        result = CliRunner().invoke(app, ["info"])
+    # info --json
+    res = run_cli("info", "--json")
+    assert res.returncode == 0
+    info = json.loads(res.stdout)
+    assert info["backend"] == "sqlite"
+    assert info["secret_count"] == 1
+    assert info["cipher_key_configured"] is True
 
-    assert result.exit_code == 0
-    assert "secret-password" not in result.stdout
-    assert "***" in result.stdout
+    # delete 单条删除
+    res = run_cli("delete", "--json", "openai", "prod", "api_key")
+    assert res.returncode == 0
+    assert json.loads(res.stdout)["deleted"] is True
 
+    res = run_cli("read", "openai", "prod", "api_key")
+    assert res.returncode == 1
 
-def test_cli_uses_stored_database_url() -> None:
-    with (
-        patch("funsecret.cli.read_secret", return_value="sqlite:///backup.db"),
-        patch("funsecret.cli.load_secret_db") as load_secret_db,
-    ):
-        result = CliRunner().invoke(app, ["load"])
-
-    assert result.exit_code == 0
-    load_secret_db.assert_called_once_with(url="sqlite:///backup.db", cipher_key=None)
+    # clear --yes
+    run_cli("write", "v1", "a", "b")
+    res = run_cli("clear", "--yes", "--json")
+    assert res.returncode == 0
+    assert json.loads(res.stdout)["cleared"] == 1

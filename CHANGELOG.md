@@ -1,10 +1,26 @@
 # Changelog
 
-## 未发布
+## 2.0.0（funsecret-core 0.1.0）
 
 ### 破坏性变更
 
 - 主包与快照扩展的 Python 最低版本提升至 3.12；使用 3.10/3.11 的环境需升级解释器后再安装新版本。
+- **核心引擎全面重写为 Rust（三 crate 虚拟工作区，对齐 `funget` 架构）**：
+  - `funsecret-core`（0.1.0）：纯 Rust 核心库，零 Python 依赖，内置 Fernet 加解密、SQLite3 / MySQL（含 MariaDB）/ PostgreSQL 多库存储与同步及原生 SQLite 短期缓存。
+  - `funsecret`（CLI 二进制）：原生静态命令行工具，通过 `cargo install` / `apt` / `brew` / GitHub Release 分发。
+  - PyPI `funsecret`（PyO3 扩展，abi3-py312）：**零运行时依赖，仅提供 Python API，不再安装 `funsecret` 命令行入口**。
+- 移除 SQLAlchemy 运行时依赖及 `SecretTable` ORM 类导出；`CacheSecretManage` 底层由 `diskcache` 迁移为原生 SQLite TTL 缓存（历史 `~/.secret/cache` 临时缓存不自动迁移）。
+
+### 新增
+
+- 原生支持 **SQLite3 / MySQL（MariaDB）/ PostgreSQL** 三类数据库，自动归一化 SQLAlchemy 风格方言 URL 前缀（`sqlite+pysqlite:///`、`mysql+pymysql://`、`mariadb+mariadbconnector://`、`postgresql+psycopg2://`、`postgres://` 等），支持跨库无缝迁移。
+- CLI 新增 `delete`（别名 `rm`）单条删除、`write --stdin` 安全写入（支持多行与 `-` 开头密钥值且不进入进程参数）、`write --expire` TTL 设置，以及所有子命令的 `--json` 结构化输出。
+- Python API 新增 `delete_secret`、`list_secret`（保留历史 `list_sectet` 别名）、`InvalidToken` 及 `.pyi` 类型存根。
+- 新增 GitHub Actions CI、多平台 wheel/CLI/deb 自动发布工作流与与 Python `cryptography.fernet` 的逐字节差分兼容测试。
+
+### 修复
+
+- 修复 Windows 环境下未设置 `HOME` 时读取默认密钥目录可能触发 `KeyError` 的问题（支持回退 `USERPROFILE`）。
 
 ## 1.4.97
 

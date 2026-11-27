@@ -1,0 +1,37 @@
+[package]
+name = "funsecret-core"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Core encrypted secret storage, Fernet crypto, and database sync engine for funsecret"
+readme = "README.md"
+keywords = ["secret", "fernet", "sqlite", "encryption", "credentials"]
+categories = ["cryptography", "database"]
+
+[dependencies]
+aes.workspace = true
+base64.workspace = true
+cbc.workspace = true
+chrono.workspace = true
+cipher.workspace = true
+hmac.workspace = true
+log.workspace = true
+md-5.workspace = true
+mysql.workspace = true
+postgres.workspace = true
+rand.workspace = true
+rusqlite.workspace = true
+rustls.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+thiserror.workspace = true
+tokio-postgres-rustls.workspace = true
+url.workspace = true
+webpki-roots.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

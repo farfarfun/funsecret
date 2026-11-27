@@ -1,6 +1,10 @@
 # funsecret
 
-`funsecret` 是一个简单的本地密钥管理工具。
+`funsecret` 是一个本地优先的加密密钥管理工具。核心引擎采用 **Rust** 实现（`funsecret-core`），同时提供：
+
+- **原生 CLI 二进制**（`funsecret`）：零 Python 依赖、毫秒级冷启动，内置 **SQLite3 / MySQL（含 MariaDB）/ PostgreSQL** 支持（兼容 SQLAlchemy 方言 URL 前缀，便于跨库迁移），通过 `cargo install` / `apt` / `brew` / GitHub Release 分发；
+- **Python 扩展包**（PyPI `funsecret`）：基于 PyO3 + maturin 包装，零运行时依赖，兼容历史 Python API 与 `~/.secret/.funsecret.db` 数据库格式；
+- **Rust 核心库**（`funsecret-core`）：供 Rust 服务与工具直接调用。
 
 适合存这些内容：
 - 账号密码
@@ -8,24 +12,30 @@
 - 数据库连接信息
 - 其他不想写进代码里的敏感配置
 
-它默认把数据保存在本机，按多级分类读取，例如 `app prod mysql password`。
+默认把数据保存在本机 `~/.secret/.funsecret.db`（权限 `0600`），按 2–5 级分类路径读取，例如 `app prod mysql password`。
 
 ## 安装
+
+### 原生命令行（推荐，零 Python 依赖）
+
+```bash
+# Cargo
+cargo install funsecret
+
+# 或从 GitHub Releases 下载对应平台的静态二进制 / .deb
+```
+
+### Python 库（仅提供 Python API，不含命令行入口）
 
 ```bash
 pip install funsecret
 ```
 
-如果你要同步到 MySQL：
+本地源码开发：
 
 ```bash
-pip install "funsecret[mysql]"
-```
-
-如果你修改了本仓库源码并希望本地直接使用命令：
-
-```bash
-pip install -e .
+cargo build --release --package funsecret
+maturin develop --release
 ```
 
 ## 命令行快速开始
@@ -36,222 +46,95 @@ pip install -e .
 funsecret write my-password app prod mysql password
 ```
 
-读取一个 secret：
+通过 stdin 安全写入（适合含 `-` 开头或多行内容，不暴露在进程参数中）：
+
+```bash
+printf '%s' 'sk-xxxxx' | funsecret write --stdin openai prod api_key
+```
+
+可选指定过期时间（小于 `1000000000` 按相对秒数，否则按 Unix 时间戳）：
+
+```bash
+funsecret write --expire 3600 temp-token app dev token
+```
+
+读取一个 secret（支持 `--json` 无损输出）：
 
 ```bash
 funsecret read app prod mysql password
+funsecret read --json app prod mysql password
 ```
 
-查看有哪些 key，只显示路径，不显示 value：
+删除单条 secret：
+
+```bash
+funsecret delete app prod mysql password
+```
+
+查看有哪些 key（只显示路径，不显示值；支持 `--json` 返回时间戳元数据）：
 
 ```bash
 funsecret list
+funsecret list --json
 ```
 
-查看当前存储信息：
+查看当前存储信息（支持 `--json`）：
 
 ```bash
 funsecret info
+funsecret info --json
 ```
 
 清空当前本地 secret：
 
 ```bash
 funsecret clear
-```
-
-跳过确认直接清空：
-
-```bash
 funsecret clear --yes
 ```
 
-## 命令说明
-
-### `write`
+同步到/自外部数据库（支持 SQLite3 / MySQL / MariaDB / PostgreSQL，自动兼容 SQLAlchemy 方言 URL 前缀如 `sqlite+pysqlite:///`、`mysql+pymysql://`、`postgresql+psycopg2://`、`postgres://`）：
 
 ```bash
-funsecret write VALUE CATE1 CATE2 [CATE3] [CATE4] [CATE5]
-```
-
-示例：
-
-```bash
-funsecret write sk-xxxxx openai prod api_key
-funsecret write root123 mysql local root password
-```
-
-### `read`
-
-```bash
-funsecret read CATE1 CATE2 [CATE3] [CATE4] [CATE5]
-```
-
-示例：
-
-```bash
-funsecret read openai prod api_key
-funsecret read mysql local root password
-```
-
-### `list`
-
-```bash
-funsecret list
-```
-
-输出示例：
-
-```text
-openai prod api_key
-mysql local root password
-```
-
-注意：`list` 不会输出 secret value。
-
-### `info`
-
-```bash
-funsecret info
-```
-
-输出示例：
-
-```text
-backend: sqlite
-database_url: sqlite:////Users/you/.secret/.funsecret.db
-database_file: /Users/you/.secret/.funsecret.db
-secret_count: 2
-cipher_key_configured: yes
-mysql_example_url: mysql+pymysql://username:password@127.0.0.1:3306/funsecret
-```
-
-### `save`
-
-把当前本地 secret 保存到一个数据库。
-
-```bash
-funsecret save DB_URL
-```
-
-保存到 MySQL：
-
-```bash
-funsecret save mysql+pymysql://username:password@127.0.0.1:3306/funsecret
-```
-
-如果传了 `--cipher-key`，写入目标库时会加密：
-
-```bash
+# MySQL / MariaDB
 funsecret save mysql+pymysql://username:password@127.0.0.1:3306/funsecret --cipher-key my-secret-key
-```
-
-如果不传 `--cipher-key`，保存到目标库时不加密。
-
-### `load`
-
-从一个数据库加载 secret 到当前本地库。
-
-```bash
-funsecret load DB_URL
-```
-
-从 MySQL 加载：
-
-```bash
-funsecret load mysql+pymysql://username:password@127.0.0.1:3306/funsecret
-```
-
-如果源库里的数据是加密的，可以传 `--cipher-key`：
-
-```bash
 funsecret load mysql+pymysql://username:password@127.0.0.1:3306/funsecret --cipher-key my-secret-key
+
+# PostgreSQL
+funsecret save postgresql+psycopg2://username:password@127.0.0.1:5432/funsecret --cipher-key my-secret-key
+funsecret load postgresql://username:password@127.0.0.1:5432/funsecret --cipher-key my-secret-key
+
+# SQLite3
+funsecret save sqlite:///backup.db --cipher-key my-secret-key
 ```
 
-如果不传 `--cipher-key`，默认按未加密数据读取。
+> 不传 `--cipher-key` 时目标库以明文写入/按明文读取；省略 URL 时自动使用 `funsecret db url` 路径中保存的默认地址。
 
 ## Python 用法
 
-写入：
-
 ```python
-from funsecret import write_secret
+from funsecret import delete_secret, list_secret, read_secret, write_secret
 
 write_secret("my-password", "app", "prod", "mysql", "password")
-write_secret("sk-xxxxx", "openai", "prod", "api_key")
-```
-
-读取：
-
-```python
-from funsecret import read_secret
-
 password = read_secret("app", "prod", "mysql", "password")
-api_key = read_secret("openai", "prod", "api_key")
+tree = list_secret()
+delete_secret("app", "prod", "mysql", "password")
 ```
 
-也可以用 `read_secret(..., value=...)` 直接写入：
+## 环境变量
 
-```python
-from funsecret import read_secret
-
-read_secret("app", "prod", "mysql", "password", value="my-password")
-```
-
-## 默认存储位置
-
-默认使用本地 sqlite：
-
-```text
-~/.secret/.funsecret.db
-```
-
-也可以通过环境变量控制：
-- `FUN_SECRET_PATH`：本地 secret 目录
-- `FUN_SECRET_URL`：直接指定数据库 URL
+- `FUN_SECRET_PATH`：覆盖默认主目录（密钥目录为 `<FUN_SECRET_PATH>/.secret`）
+- `FUN_SECRET_URL`：直接指定数据库 URL（`sqlite:///...` 或 `mysql://...`）
+- `FUN_CACHE_SECRET_PATH` / `FUN_CACHE_SECRET_HOME`：短期缓存目录配置
 
 ## 快照扩展
 
-快照功能需要单独安装：
-
-```bash
-pip install "funsecret-snapshot" "fundrive[dropbox]"
-```
-
-设置 Dropbox access token：
-
-```bash
-export DROPBOX_ACCESS_TOKEN="your-dropbox-access-token"
-```
-
-保存或读取快照：
-
-```python
-import os
-
-from fundrive.drives.dropbox import DropboxDrive
-from funsecret.snapshot import load_snapshot, save_snapshot
-
-drive = DropboxDrive()
-if not drive.login(access_token=os.environ["DROPBOX_ACCESS_TOKEN"]):
-    raise RuntimeError("Dropbox login failed")
-
-table_fid = "/funsecret-snapshots"
-if not drive.exist(table_fid):
-    drive.mkdir("", "funsecret-snapshots")
-
-save_snapshot(table_fid=table_fid, drive=drive)
-load_snapshot(table_fid=table_fid, drive=drive)
-```
-
-`table_fid` 是保存快照的云盘目录 ID；其他 `fundrive` 驱动也可替换 `DropboxDrive`，具体认证方式参见 [fundrive 文档](https://github.com/farfarfun/fundrive)。
+云盘快照功能由工作区子包 [extbuild/funsecret-snapshot](extbuild/funsecret-snapshot/README.md) 单独提供。
 
 ---
 
 ## 关于 farfarfun
 
-[farfarfun](https://github.com/farfarfun) 是一个专注于实用工具库的开源组织，
-涵盖云存储、数据处理、AI、多媒体与开发工具链等方向。
+[farfarfun](https://github.com/farfarfun) 是一个专注于实用工具库的开源组织，涵盖云存储、数据处理、AI、多媒体与开发工具链等方向。
 
 - 🏠 组织主页：<https://github.com/farfarfun>
 - 📦 PyPI：<https://pypi.org/user/niuliangtao/>

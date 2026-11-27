@@ -1,0 +1,46 @@
+# 纯虚拟工作区:根目录不再是一个 crate。三个 crate 全部在 crates/ 下,
+# 顶层 src/ 让给 Python 包(src layout)。这样「哪个目录是谁的」不再有歧义 ——
+# Rust 看 crates/,Python 看 src/。
+[workspace]
+members = ["crates/funsecret-core", "crates/funsecret", "crates/funsecret-py"]
+resolver = "2"
+
+[workspace.package]
+# crates/funsecret-py(PyO3 扩展)和 crates/funsecret(CLI 二进制)跟这个号走,
+# 与 pyproject.toml 保持同步。crates/funsecret-core 维护独立的 0.x 版本线。
+version = "2.0.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/farfarfun/funsecret"
+rust-version = "1.82"
+
+[workspace.dependencies]
+aes = "0.8"
+base64 = "0.22"
+cbc = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+cipher = { version = "0.4", features = ["block-padding"] }
+clap = { version = "4", features = ["derive"] }
+env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
+funsecret-core = { path = "crates/funsecret-core", version = "0.1.0" }
+hmac = "0.12"
+log = "0.4"
+md-5 = "0.10"
+mysql = { version = "26", default-features = false, features = ["minimal-rust", "rustls-tls-ring"] }
+postgres = "0.19"
+rand = "0.8"
+rusqlite = { version = "0.32", features = ["bundled"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+subtle = "2"
+thiserror = "2"
+tokio-postgres-rustls = "0.13"
+url = "2"
+webpki-roots = "0.26"
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true

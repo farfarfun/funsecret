@@ -1,0 +1,29 @@
+[package]
+name = "funsecret"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Local-first encrypted secret manager CLI with SQLite and database sync"
+readme = "README.md"
+keywords = ["secret", "fernet", "sqlite", "encryption", "cli"]
+categories = ["command-line-utilities", "cryptography"]
+
+[lib]
+name = "funsecret"
+path = "src/lib.rs"
+
+[[bin]]
+name = "funsecret"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+env_logger.workspace = true
+funsecret-core.workspace = true
+log.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

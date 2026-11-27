@@ -1,16 +1,25 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
 
 [project]
 name = "funsecret"
-version = "1.4.100"
+version = "2.0.0"
 description = "Local-first encrypted secret manager with SQLite and database sync"
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = ["secret", "fernet", "sqlite", "encryption", "credentials"]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Rust",
+]
+# 零运行时依赖：核心存储、加解密与数据库同步全部在 Rust 扩展内完成。
+dependencies = []
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = [ "cryptography>=43.0.3", "diskcache>=5.6.3,<6", "farcache>=2.0.3", "farlog>=1.1.7", "sqlalchemy>=2.0.35", "tqdm>=4.67.0", "typer>=0.12.5",]
+
 [[project.authors]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
@@ -18,6 +27,7 @@ email = "niuliangtao@qq.com"
 [[project.authors]]
 name = "farfarfun"
 email = "farfarfun@qq.com"
+
 [[project.maintainers]]
 name = "牛哥"
 email = "niuliangtao@qq.com"
@@ -25,20 +35,21 @@ email = "niuliangtao@qq.com"
 [[project.maintainers]]
 name = "farfarfun"
 email = "farfarfun@qq.com"
+
+# 对齐 funget：PyPI 包只提供 Python API，不再安装 funsecret 命令行入口。
+# 原生 CLI 二进制通过 cargo install / apt / brew / GitHub Release 分发。
+
 [project.urls]
 Organization = "https://github.com/farfarfun"
 Repository = "https://github.com/farfarfun/funsecret"
 Releases = "https://github.com/farfarfun/funsecret/releases"
 
-[project.scripts]
-funsecret = "funsecret.cli:app"
-
-[project.optional-dependencies]
-mysql = [ "pymysql>=1.1.1",]
-mysqlclient = [ "mysqlclient>=2.2.7",]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/funsecret"]
+[tool.maturin]
+features = ["pyo3/abi3-py312"]
+module-name = "funsecret._funsecret"
+python-source = "src"
+manifest-path = "crates/funsecret-py/Cargo.toml"
+strip = true
 
 [tool.uv.workspace]
-members = [ "extbuild/funsecret-snapshot",]
+members = ["extbuild/funsecret-snapshot"]

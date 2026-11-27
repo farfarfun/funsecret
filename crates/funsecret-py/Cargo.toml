@@ -1,0 +1,19 @@
+[package]
+name = "funsecret-py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version = "1.83"
+description = "funsecret 的 Python 扩展模块"
+publish = false
+
+[lib]
+name = "_funsecret"
+crate-type = ["cdylib"]
+
+[dependencies]
+funsecret-core.workspace = true
+pyo3 = { version = "0.29", features = ["extension-module"] }
+pyo3-log = "0.13"
+serde_json.workspace = true
