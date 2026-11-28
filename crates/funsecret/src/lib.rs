@@ -120,6 +120,10 @@ pub struct SyncArgs {
     #[arg(long = "cipher-key", value_name = "KEY")]
     pub cipher_key: Option<String>,
 
+    /// Suppress progress bar and summary output.
+    #[arg(short = 's', long)]
+    pub silent: bool,
+
     /// Print output as JSON.
     #[arg(long)]
     pub json: bool,
@@ -476,10 +480,11 @@ fn cmd_sync(args: SyncArgs, is_load: bool) -> i32 {
             return 2;
         }
     };
+    let show_progress = !args.json && !args.silent;
     let result = if is_load {
-        load_secret_db(Some(&url), args.cipher_key.as_deref())
+        load_secret_db(Some(&url), args.cipher_key.as_deref(), show_progress)
     } else {
-        save_secret_db(Some(&url), args.cipher_key.as_deref())
+        save_secret_db(Some(&url), args.cipher_key.as_deref(), show_progress)
     };
     match result {
         Ok(count) => {
@@ -491,6 +496,10 @@ fn cmd_sync(args: SyncArgs, is_load: bool) -> i32 {
                         "synced": count,
                     })
                 );
+            } else if !args.silent {
+                let verb = if is_load { "loaded" } else { "saved" };
+                let unit = if count == 1 { "secret" } else { "secrets" };
+                println!("{verb} {count} {unit}");
             }
             0
         }

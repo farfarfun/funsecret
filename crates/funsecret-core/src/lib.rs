@@ -3,6 +3,7 @@
 pub mod cache;
 pub mod error;
 pub mod fernet;
+mod progress;
 pub mod store;
 
 pub use cache::{read_cache_secret, write_cache_secret, CacheSecretManage};

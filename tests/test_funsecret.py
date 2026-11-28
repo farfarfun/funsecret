@@ -311,9 +311,22 @@ def test_rust_cli_end_to_end(tmp_path: Path) -> None:
 
     # clear --yes
     run_cli("write", "v1", "a", "b")
+    backup_url = f"sqlite:///{tmp_path / 'sync-backup.db'}"
+    save_res = run_cli("save", backup_url)
+    assert save_res.returncode == 0, save_res.stderr
+    assert save_res.stdout.strip() == "saved 1 secret"
+
     res = run_cli("clear", "--yes", "--json")
     assert res.returncode == 0
     assert json.loads(res.stdout)["cleared"] == 1
+
+    load_res = run_cli("load", backup_url)
+    assert load_res.returncode == 0, load_res.stderr
+    assert load_res.stdout.strip() == "loaded 1 secret"
+
+    silent_res = run_cli("save", "--silent", backup_url)
+    assert silent_res.returncode == 0, silent_res.stderr
+    assert silent_res.stdout.strip() == ""
 
 
 def test_python_wheel_cli_entry_point(tmp_path: Path) -> None:

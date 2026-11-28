@@ -377,17 +377,18 @@ impl PySecretManage {
         py.detach(move || inner.clear()).map_err(to_py_err)
     }
 
-    #[pyo3(signature = (target, source_secret = true, target_secret = true))]
+    #[pyo3(signature = (target, source_secret = true, target_secret = true, progress = true))]
     fn sync_to(
         &self,
         py: Python<'_>,
         target: &PySecretManage,
         source_secret: bool,
         target_secret: bool,
+        progress: bool,
     ) -> PyResult<usize> {
         let source = self.inner.clone();
         let dst = target.inner.clone();
-        py.detach(move || source.sync_to(&dst, source_secret, target_secret))
+        py.detach(move || source.sync_to(&dst, source_secret, target_secret, progress))
             .map_err(to_py_err)
     }
 }
@@ -578,17 +579,27 @@ fn list_secret(py: Python<'_>, secret: bool) -> PyResult<Py<PyDict>> {
 }
 
 #[pyfunction]
-#[pyo3(signature = (url = None, cipher_key = None))]
-fn load_secret_db(py: Python<'_>, url: Option<String>, cipher_key: Option<String>) -> PyResult<()> {
-    py.detach(move || core_load_secret_db(url.as_deref(), cipher_key.as_deref()))
+#[pyo3(signature = (url = None, cipher_key = None, progress = true))]
+fn load_secret_db(
+    py: Python<'_>,
+    url: Option<String>,
+    cipher_key: Option<String>,
+    progress: bool,
+) -> PyResult<()> {
+    py.detach(move || core_load_secret_db(url.as_deref(), cipher_key.as_deref(), progress))
         .map(|_| ())
         .map_err(to_py_err)
 }
 
 #[pyfunction]
-#[pyo3(signature = (url = None, cipher_key = None))]
-fn save_secret_db(py: Python<'_>, url: Option<String>, cipher_key: Option<String>) -> PyResult<()> {
-    py.detach(move || core_save_secret_db(url.as_deref(), cipher_key.as_deref()))
+#[pyo3(signature = (url = None, cipher_key = None, progress = true))]
+fn save_secret_db(
+    py: Python<'_>,
+    url: Option<String>,
+    cipher_key: Option<String>,
+    progress: bool,
+) -> PyResult<()> {
+    py.detach(move || core_save_secret_db(url.as_deref(), cipher_key.as_deref(), progress))
         .map(|_| ())
         .map_err(to_py_err)
 }

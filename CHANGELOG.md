@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2（funsecret-core 0.2.0）
+
+### 新增
+
+- 为 `save` / `load`（以及 Python 的 `save_secret_db` / `load_secret_db`）接入原生 Rust 进度条 `indicatif`：在交互终端自动显示连接 Spinner 与同步进度条，非 TTY / `--json` / `-s --silent` 自动隐藏。
+- 普通终端模式下 `funsecret save` / `funsecret load` 完成后明确打印结果汇总（如 `saved 42 secrets` / `loaded 42 secrets`），不再静默退出。
+- `funsecret-core` 统一在 `sync_to` / `load_secret_db` / `save_secret_db` 接收 `progress: bool` 参数，避免拆分重复 API（同步升至 `0.2.0`）。
+
 ## 2.0.1
 
 ### 新增

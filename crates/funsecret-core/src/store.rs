@@ -22,6 +22,7 @@ use url::Url;
 
 use crate::error::{FunSecretError, Result};
 use crate::fernet::{decrypt, derive_default_key, encrypt};
+use crate::progress::SyncProgress;
 
 /// 默认 MySQL 连接串示例（用于 `info` 输出）。
 pub const MYSQL_EXAMPLE_URL: &str = "mysql+pymysql://username:password@127.0.0.1:3306/funsecret";
@@ -852,8 +853,22 @@ impl SecretManage {
         target: &SecretManage,
         source_secret: bool,
         target_secret: bool,
+        progress: bool,
     ) -> Result<usize> {
+        self.sync_to_labeled(target, source_secret, target_secret, progress, "syncing")
+    }
+
+    fn sync_to_labeled(
+        &self,
+        target: &SecretManage,
+        source_secret: bool,
+        target_secret: bool,
+        progress: bool,
+        label: &str,
+    ) -> Result<usize> {
+        let bar = SyncProgress::start(label, progress);
         let rows = self.scalars()?;
+        bar.set_total(rows.len());
         let mut count = 0usize;
 
         match &target.backend {
@@ -884,6 +899,7 @@ impl SecretManage {
                             row.expire_time
                         ])?;
                         count += 1;
+                        bar.inc(1);
                     }
                 }
                 tx.commit()?;
@@ -912,6 +928,7 @@ impl SecretManage {
                     )
                     .map_err(|e| FunSecretError::Mysql(e.to_string()))?;
                     count += 1;
+                    bar.inc(1);
                 }
                 tx.commit()
                     .map_err(|e| FunSecretError::Mysql(e.to_string()))?;
@@ -939,11 +956,13 @@ impl SecretManage {
                     tx.execute(&stmt, &[&target_key, &target_val, &row.expire_time])
                         .map_err(|e| FunSecretError::Postgres(e.to_string()))?;
                     count += 1;
+                    bar.inc(1);
                 }
                 tx.commit()
                     .map_err(|e| FunSecretError::Postgres(e.to_string()))?;
             }
         }
+        bar.finish();
         Ok(count)
     }
 
@@ -1080,17 +1099,25 @@ pub fn list_secret(secret: bool) -> Result<SecretTree> {
 }
 
 /// 从外部数据库加载密钥到默认数据库。
-pub fn load_secret_db(url: Option<&str>, cipher_key: Option<&str>) -> Result<usize> {
+pub fn load_secret_db(
+    url: Option<&str>,
+    cipher_key: Option<&str>,
+    progress: bool,
+) -> Result<usize> {
     let source = SecretManage::new(None, url, cipher_key)?;
     let target = SecretManage::new(None, None, None)?;
-    source.sync_to(&target, cipher_key.is_some(), true)
+    source.sync_to_labeled(&target, cipher_key.is_some(), true, progress, "loading")
 }
 
 /// 把默认数据库中的密钥保存到外部数据库。
-pub fn save_secret_db(url: Option<&str>, cipher_key: Option<&str>) -> Result<usize> {
+pub fn save_secret_db(
+    url: Option<&str>,
+    cipher_key: Option<&str>,
+    progress: bool,
+) -> Result<usize> {
     let source = SecretManage::new(None, None, None)?;
     let target = SecretManage::new(None, url, cipher_key)?;
-    source.sync_to(&target, true, cipher_key.is_some())
+    source.sync_to_labeled(&target, true, cipher_key.is_some(), progress, "saving")
 }
 
 /// 清空指定数据库；未指定 `url` 时清空默认数据库。
@@ -1159,7 +1186,7 @@ mod tests {
 
         let backup =
             SecretManage::new(Some(dir.path().to_str().unwrap()), Some(&backup_url), None).unwrap();
-        assert_eq!(default.sync_to(&backup, true, false).unwrap(), 1);
+        assert_eq!(default.sync_to(&backup, true, false, false).unwrap(), 1);
         assert_eq!(
             backup
                 .read("app", "prod", "", "", "", None, false, false, None)
@@ -1169,7 +1196,7 @@ mod tests {
         );
 
         let restored = SecretManage::new(Some(restored_dir.to_str().unwrap()), None, None).unwrap();
-        assert_eq!(backup.sync_to(&restored, false, true).unwrap(), 1);
+        assert_eq!(backup.sync_to(&restored, false, true, false).unwrap(), 1);
         assert_eq!(
             restored
                 .read("app", "prod", "", "", "", None, false, true, None)
