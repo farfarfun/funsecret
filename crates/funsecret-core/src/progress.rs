@@ -22,7 +22,7 @@ impl SyncProgress {
                 enabled: false,
             };
         }
-        let bar = ProgressBar::with_draw_target(None, ProgressDrawTarget::stderr());
+        let bar = ProgressBar::hidden();
         bar.set_prefix(label.to_string());
         if let Ok(style) =
             ProgressStyle::with_template("{spinner:.cyan} {prefix}: {msg} ({elapsed})")
@@ -30,6 +30,7 @@ impl SyncProgress {
             bar.set_style(style);
         }
         bar.set_message("connecting...");
+        bar.set_draw_target(ProgressDrawTarget::stderr());
         bar.enable_steady_tick(Duration::from_millis(100));
         Self { bar, enabled: true }
     }
@@ -43,7 +44,7 @@ impl SyncProgress {
         self.bar.set_length(total as u64);
         self.bar.set_position(0);
         if let Ok(style) = ProgressStyle::with_template(
-            "{prefix} [{bar:32.cyan/blue}] {pos}/{len} ({elapsed_precise})",
+            "{prefix} {percent:>3}% [{bar:32.cyan/blue}] {pos}/{len} ({elapsed_precise})",
         ) {
             self.bar.set_style(style.progress_chars("=> "));
         }
@@ -55,9 +56,13 @@ impl SyncProgress {
         }
     }
 
+    /// 强制刷新最终 100% 状态并保留在终端上（对齐 `tqdm` 默认 `leave=True`）。
+    /// 即使同步在几毫秒内完成、未触发 50ms 节流刷新，`finish()` 也会立即绘制最终进度条；
+    /// 随后换行，避免后续 stdout 汇总与进度条粘在同一行。
     pub(crate) fn finish(&self) {
         if self.enabled {
-            self.bar.finish_and_clear();
+            self.bar.finish();
+            eprintln!();
         }
     }
 }

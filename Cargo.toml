@@ -8,7 +8,7 @@ resolver = "2"
 [workspace.package]
 # crates/funsecret-py(PyO3 扩展)和 crates/funsecret(CLI 二进制)跟这个号走,
 # 与 pyproject.toml 保持同步。crates/funsecret-core 维护独立的 0.x 版本线。
-version = "2.1.0"
+version = "2.1.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/farfarfun/funsecret"
@@ -22,7 +22,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 cipher = { version = "0.4", features = ["block-padding"] }
 clap = { version = "4", features = ["derive"] }
 env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
-funsecret-core = { path = "crates/funsecret-core", version = "0.2.0" }
+funsecret-core = { path = "crates/funsecret-core", version = "0.2.1" }
 hmac = "0.12"
 indicatif = "0.17"
 log = "0.4"

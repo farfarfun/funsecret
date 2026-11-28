@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "funsecret"
-version = "2.1.0"
+version = "2.1.1"
 description = "Local-first encrypted secret manager with SQLite and database sync"
 readme = "README.md"
 requires-python = ">=3.12"

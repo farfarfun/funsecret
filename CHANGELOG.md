@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1（funsecret-core 0.2.1）
+
+### 优化
+
+- `save` / `load` 进度条完成时由 `finish_and_clear()` 改为 `finish()`，并补充百分比显示（对齐 `tqdm` 默认 `leave=True` 行为）：即使本地 SQLite 事务在几毫秒内完成，也会强制渲染最终的 `100%` 进度条并保留在终端上，异常中断时仍会自动清除未完成的 Spinner。
+
 ## 2.1.0
 
 ### 变更
