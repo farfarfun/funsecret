@@ -74,8 +74,7 @@ jobs:
         run: |
           python -m pip install --find-links dist --no-index funsecret
           python -c "import funsecret; print(funsecret.read_secret, funsecret.write_secret, funsecret.SecretManage)"
-          funsecret --version
-          python -c "import importlib.metadata as m; cs=[e.name for e in m.distribution('funsecret').entry_points if e.group=='console_scripts']; assert 'funsecret' in cs, cs; print('ok: funsecret console_script installed')"
+          python -c "import importlib.metadata as m; cs=[e for e in m.distribution('funsecret').entry_points if e.group=='console_scripts']; assert not cs, cs; print('ok: no console_scripts in wheel')"
 
       - uses: actions/upload-artifact@v4
         with:

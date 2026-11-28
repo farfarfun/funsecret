@@ -329,58 +329,13 @@ def test_rust_cli_end_to_end(tmp_path: Path) -> None:
     assert silent_res.stdout.strip() == ""
 
 
-def test_python_wheel_cli_entry_point(tmp_path: Path) -> None:
-    """确认 pip 安装出的 funsecret._cli 入口转发到 Rust CLI 并正常工作。"""
-    env = os.environ.copy()
-    env["FUN_SECRET_PATH"] = str(tmp_path)
-    env.pop("FUN_SECRET_URL", None)
+def test_python_wheel_has_no_console_scripts() -> None:
+    """对齐 funget：PyPI wheel 只提供 Python API，不安装 funsecret 命令行入口。"""
+    import importlib.metadata as metadata
 
-    ver = subprocess.run(
-        [sys.executable, "-c", "from funsecret._cli import main; main()", "--version"],
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-        timeout=15,
-    )
-    assert ver.returncode == 0, ver.stderr
-    assert "funsecret" in ver.stdout
-
-    write_res = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "from funsecret._cli import main; main()",
-            "write",
-            "--stdin",
-            "wheel",
-            "test",
-            "key",
-        ],
-        input="wheel-secret",
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-        timeout=15,
-    )
-    assert write_res.returncode == 0, write_res.stderr
-
-    read_res = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "from funsecret._cli import main; main()",
-            "read",
-            "wheel",
-            "test",
-            "key",
-        ],
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-        timeout=15,
-    )
-    assert read_res.returncode == 0, read_res.stderr
-    assert read_res.stdout.strip() == "wheel-secret"
+    scripts = [
+        ep.name
+        for ep in metadata.distribution("funsecret").entry_points
+        if ep.group == "console_scripts"
+    ]
+    assert scripts == []

@@ -674,11 +674,6 @@ fn write_cache_secret(
     .map_err(to_py_err)
 }
 
-#[pyfunction]
-fn cli_main(py: Python<'_>, args: Vec<String>) -> i32 {
-    py.detach(|| funsecret::run(args))
-}
-
 #[pymodule]
 fn _funsecret(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
     pyo3_log::init();
@@ -686,8 +681,6 @@ fn _funsecret(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("InvalidToken", py.get_type::<InvalidToken>())?;
     module.add_class::<PySecretManage>()?;
     module.add_class::<PyCacheSecretManage>()?;
-
-    module.add_function(wrap_pyfunction!(cli_main, module)?)?;
 
     module.add_function(wrap_pyfunction!(generate_key, module)?)?;
     module.add_function(wrap_pyfunction!(encrypt, module)?)?;

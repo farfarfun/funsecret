@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "funsecret"
-version = "2.0.2"
+version = "2.1.0"
 description = "Local-first encrypted secret manager with SQLite and database sync"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -36,10 +36,8 @@ email = "niuliangtao@qq.com"
 name = "farfarfun"
 email = "farfarfun@qq.com"
 
-# pip install funsecret 同步安装 funsecret 命令（入口转发至 Rust funsecret::run），
-# 既有 Python 用户可无感升级；独立原生二进制同样通过 cargo / apt / brew / Release 分发。
-[project.scripts]
-funsecret = "funsecret._cli:main"
+# 对齐 funget：PyPI 包只提供 Python API，不再安装 funsecret 命令行入口。
+# 命令行统一通过 apt / brew / cargo install / GitHub Release 静态二进制分发，避免与系统 PATH 冲突。
 
 [project.urls]
 Organization = "https://github.com/farfarfun"

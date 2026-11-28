@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+### 变更
+
+- **PyPI `funsecret` 不再打包命令行入口（完全对齐 `funget` 1.2+）**：`pip install funsecret` 仅提供零依赖 Python API，不再链接 `clap` 与 `env_logger`，减小 wheel 体积并避免与 `/usr/bin/funsecret` 抢占 `PATH`。命令行统一通过 `apt`、`brew`、`cargo install funsecret` 或 GitHub Release 静态二进制安装。
+
 ## 2.0.2（funsecret-core 0.2.0）
 
 ### 新增

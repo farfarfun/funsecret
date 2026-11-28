@@ -16,19 +16,25 @@
 
 ## 安装
 
-### 通过 pip / uv 安装（同时包含 Python API 与 Rust 驱动的 `funsecret` 命令）
+### 命令行安装（原生静态二进制，零 Python 依赖）
 
 ```bash
-pip install -U funsecret
-```
+# APT（添加 farfarfun 源后，见 https://farfarfun.github.io/packages/funsecret/）
+sudo apt install funsecret
 
-### 独立原生命令行（零 Python 环境依赖）
+# Homebrew
+brew install farfarfun/packages/funsecret
 
-```bash
 # Cargo
 cargo install funsecret
 
-# 或从 GitHub Releases 下载对应平台的静态二进制 / .deb
+# 或直接从 GitHub Releases 下载对应平台的静态二进制 / .deb
+```
+
+### Python 库安装（仅提供 Python API，不含命令行入口）
+
+```bash
+pip install funsecret
 ```
 
 本地源码开发：

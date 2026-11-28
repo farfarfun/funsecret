@@ -13,7 +13,7 @@ name = "_funsecret"
 crate-type = ["cdylib"]
 
 [dependencies]
-funsecret = { path = "../funsecret" }
+# 刻意不依赖 ../funsecret(CLI crate)：wheel 只提供 Python API，命令行走 apt / brew / cargo / Release。
 funsecret-core.workspace = true
 pyo3 = { version = "0.29", features = ["extension-module"] }
 pyo3-log = "0.13"
